@@ -12,6 +12,14 @@ import SwiftUI
 /// The body states the consequence to the trend rather than asking a generic
 /// "are you sure", because deleting a day silently redraws the line — that is
 /// the part the user cannot see coming.
+///
+/// Design reference §7.7 is explicit that the sheet is **flush**: full screen
+/// width, bottom edge on the bottom of the display, no side inset and no bottom
+/// inset. A confirmation that decides whether a day's data survives reads as the
+/// system taking over the bottom of the screen, not as a card hovering above it.
+/// So the radius is on the top two corners only — the bottom pair has no gap to
+/// round against — and the `24` pt bottom padding carries the bottom safe-area
+/// inset on top of it so the buttons clear the home indicator.
 struct DeleteConfirmationSheet: View {
 
     let kilograms: Double
@@ -51,9 +59,22 @@ struct DeleteConfirmationSheet: View {
         .multilineTextAlignment(.center)
         .padding(.top, Metrics.space5)
         .padding(.horizontal, Metrics.space4)
-        .padding(.bottom, Metrics.space4)
+        // §7.7: `24` bottom **plus the bottom safe-area inset**. It cannot be
+        // `.safeAreaPadding(.bottom)`: that consumes the inset, and the caller's
+        // `.ignoresSafeArea` then has nothing left to expand into, so the fill
+        // stops at the home indicator instead of at the bottom of the display.
+        .padding(.bottom, Metrics.space4 + ScreenInsets.bottom)
         .frame(maxWidth: .infinity)
-        .background(Palette.sur, in: .rect(cornerRadius: Metrics.radiusCard, style: .continuous))
+        .background(
+            Palette.sur,
+            in: .rect(
+                topLeadingRadius: Metrics.radiusCard,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: Metrics.radiusCard,
+                style: .continuous
+            )
+        )
         .shadow(
             color: Palette.sheetShadow,
             radius: Metrics.sheetShadowRadius,
@@ -77,7 +98,7 @@ struct DeleteConfirmationSheet: View {
                 .background(background, in: .capsule)
                 .contentShape(.capsule)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     /// "72.4 kg from Saturday, 29 August will be removed and the trend
@@ -93,8 +114,7 @@ struct DeleteConfirmationSheet: View {
         Palette.bg.ignoresSafeArea()
         Palette.scrim.ignoresSafeArea()
         DeleteConfirmationSheet(kilograms: 72.4, date: .now, onDelete: {}, onKeep: {})
-            .padding(.horizontal, Metrics.space4)
-            .padding(.bottom, Metrics.space5)
+            .ignoresSafeArea(.container, edges: .bottom)
     }
     .preferredColorScheme(.light)
 }
@@ -104,8 +124,7 @@ struct DeleteConfirmationSheet: View {
         Palette.bg.ignoresSafeArea()
         Palette.scrim.ignoresSafeArea()
         DeleteConfirmationSheet(kilograms: 72.4, date: .now, onDelete: {}, onKeep: {})
-            .padding(.horizontal, Metrics.space4)
-            .padding(.bottom, Metrics.space5)
+            .ignoresSafeArea(.container, edges: .bottom)
     }
     .preferredColorScheme(.dark)
 }
