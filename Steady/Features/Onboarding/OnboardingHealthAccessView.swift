@@ -77,7 +77,7 @@ struct OnboardingHealthAccessView: View {
                 .padding(.vertical, Self.hitAreaPadding)
                 .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .disabled(isRequesting)
         .accessibilityLabel("Maybe later")
         .accessibilityHint("Finishes setup without Apple Health access")

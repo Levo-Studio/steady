@@ -43,7 +43,7 @@ struct PrimaryButton<Label: View>: View {
                 }
                 .contentShape(.capsule)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var textStyle: SteadyTextStyle {

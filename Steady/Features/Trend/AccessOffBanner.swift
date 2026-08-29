@@ -38,7 +38,7 @@ struct AccessOffBanner: View {
                     .contentShape(.rect)
                     .padding(-Self.tapTargetPad)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .accessibilityLabel("Allow")
             .accessibilityHint("Asks Apple Health for access again")
         }
