@@ -53,7 +53,7 @@ nonisolated struct ChartGeometry: Equatable, Sendable {
         guard !all.isEmpty else {
             return ChartGeometry(
                 dots: [], trendPoints: [],
-                minValue: 0, maxValue: 1,
+                minValue: 0, maxValue: 0,
                 width: width, height: height
             )
         }
