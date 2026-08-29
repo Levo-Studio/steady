@@ -17,8 +17,13 @@ struct Wordmark: View {
     var markSize: CGFloat = Metrics.markHeaderSize
 
     var body: some View {
-        HStack(spacing: Metrics.wordmarkGap) {
+        // Design reference §7.1: the lockup is baseline-aligned, not centred.
+        // The mark has no text baseline of its own; in the source it is an
+        // inline SVG, whose baseline is its bottom edge, so that is the guide
+        // it publishes here.
+        HStack(alignment: .firstTextBaseline, spacing: Metrics.wordmarkGap) {
             Mark(size: markSize)
+                .alignmentGuide(.firstTextBaseline) { $0[.bottom] }
             Text("steady")
                 .steadyTextStyle(.wordmark)
                 .foregroundStyle(Palette.ink)
