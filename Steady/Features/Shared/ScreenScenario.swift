@@ -13,6 +13,7 @@
 // business in a release binary.
 #if DEBUG
 
+import Combine
 import SwiftUI
 
 /// One of the states design reference §7 draws.
@@ -42,6 +43,9 @@ enum ScreenScenario: String, CaseIterable {
     case trendReadFailed
     /// §7.9
     case trendAccessOff
+    /// Not a screen: every state-driven animation in §9, replayed on a timer so
+    /// they can be recorded and watched.
+    case motionRehearsal
 
     /// The scenario named on the command line, if any.
     static var current: ScreenScenario? {
@@ -65,6 +69,8 @@ enum ScreenScenario: String, CaseIterable {
             TrendPreviewData.samples(days: 400)
         case .trendAccessOff:
             TrendPreviewData.samples(days: 60)
+        case .motionRehearsal:
+            TrendPreviewData.samples(days: 400)
         }
     }
 
@@ -76,7 +82,7 @@ enum ScreenScenario: String, CaseIterable {
 
     var tab: RootTab {
         switch self {
-        case .trend, .trendEmpty, .trendReadFailed, .trendAccessOff: .trend
+        case .trend, .trendEmpty, .trendReadFailed, .trendAccessOff, .motionRehearsal: .trend
         default: .log
         }
     }
@@ -135,8 +141,103 @@ struct ScreenScenarioHost: View {
             LogView(selectedTab: $tab)
         case .trend, .trendEmpty, .trendReadFailed, .trendAccessOff:
             TrendView(selectedTab: $tab)
+        case .motionRehearsal:
+            MotionRehearsal()
         }
     }
+}
+
+
+// MARK: - Motion rehearsal
+
+/// Replays every state-driven animation in design reference §9 on a timer.
+///
+/// Synthetic touches cannot be delivered to the simulator, so this drives the
+/// same state the controls drive, in the same `withAnimation` the controls use.
+/// What it verifies is what is in question: that the pills genuinely *slide*
+/// rather than cross-fading, that the chart line genuinely draws in, that the
+/// numbers roll, and that the sheet rises from the edge. Recording it and
+/// stepping through the frames is the only way to see an intermediate position.
+struct MotionRehearsal: View {
+
+    @Environment(WeightStore.self) private var store
+
+    @State private var tab = RootTab.trend
+    @State private var period = Period.week
+    @State private var showsSheet = false
+    @State private var chartToken = 0
+    @State private var step = 0
+
+    private let beat = Timer.publish(every: 0.9, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        VStack(spacing: Metrics.space3) {
+            // The same card §7.8 specifies — `sur`, radius 28, padding 24. It
+            // is not decoration here: the period control's track is filled `bg`
+            // *because* it is inset in a `sur` card, so a rehearsal without the
+            // card renders the track invisibly and misrepresents the screen.
+            VStack(alignment: .leading, spacing: Metrics.space4) {
+                TrendHeader(summary: store.summary(for: period), isEmpty: false)
+                TrendChart(
+                    series: store.series(for: period),
+                    period: period,
+                    redrawToken: chartToken
+                )
+                PeriodControl(selection: $period)
+            }
+            .padding(Metrics.space4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.sur, in: .rect(cornerRadius: Metrics.radiusCard))
+
+            TrendStatsGrid(
+                stats: TrendEngine.stats(for: period, readings: store.readings, trend: store.trend),
+                isEmpty: false,
+                onEditToday: {}
+            )
+            Spacer()
+            TabBar(selection: $tab)
+        }
+        .padding(.horizontal, Metrics.screenSides)
+        .padding(.top, Metrics.screenTop)
+        .padding(.bottom, Metrics.screenBottom)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .overlay(alignment: .bottom) {
+            if showsSheet {
+                DeleteConfirmationSheet(kilograms: 72.4, date: .now, onDelete: {}, onKeep: {})
+                    .transition(Motion.sheetTransitionForRehearsal)
+            }
+        }
+        .ignoresSafeArea(.container, edges: .vertical)
+        .onReceive(beat) { _ in advance() }
+    }
+
+    /// Each beat moves exactly one thing, so a recording can be read without
+    /// guessing which animation a frame belongs to.
+    private func advance() {
+        step += 1
+        switch step % 6 {
+        case 1, 2:
+            withAnimation(Motion.settle) {
+                period = period == .week ? .month : (period == .month ? .year : .week)
+                chartToken += 1
+            }
+        case 3:
+            withAnimation(Motion.settle) { tab = tab == .trend ? .log : .trend }
+        case 4:
+            withAnimation(Motion.present) { showsSheet = true }
+        case 5:
+            withAnimation(Motion.present) { showsSheet = false }
+        default:
+            withAnimation(Motion.settle) { tab = tab == .trend ? .log : .trend }
+        }
+    }
+}
+
+extension Motion {
+    /// The rehearsal cannot reach `SteadyMotion` from a static context, and the
+    /// sheet's transition is the one piece of §9 it has to state twice.
+    static let sheetTransitionForRehearsal: AnyTransition =
+        .move(edge: .bottom).combined(with: .opacity)
 }
 
 #endif
