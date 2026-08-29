@@ -235,6 +235,12 @@ nonisolated extension SteadyTextStyle {
     /// `13 / 1`, 500. "Allow" on the access-off banner.
     static let bannerAction = Self(size: 13, weight: .medium, relativeTo: .footnote)
 
+    /// `13 / 1`, 400. "Maybe later" on the health-access screen. The source is
+    /// `400 13px/1`, so the line box is the point size — it must not borrow the
+    /// privacy note's `1.45`, which would inflate a single-line label's box to
+    /// `18.9` and push the glyph off the specified `24` and `40` gaps.
+    static let maybeLater = Self(size: 13, weight: .regular, relativeTo: .footnote)
+
     /// `13 / 1.45`, 400. The onboarding privacy note.
     static let privacyNote = Self(size: 13, lineHeight: 1.45, weight: .regular, relativeTo: .footnote)
 
