@@ -273,9 +273,12 @@ nonisolated enum TrendEngine {
 
     /// The four cells under the chart.
     struct Stats: Equatable, Sendable {
-        /// Today's raw reading, not a trend value.
+        /// Today's raw reading, not a trend value, resolved by calendar date.
+        /// `nil` when today has no reading — the cell then shows an em dash,
+        /// which is §7.3's treatment of an absent value.
         var today: Double?
-        /// Yesterday's raw reading.
+        /// Yesterday's raw reading, resolved by calendar date. `nil` when
+        /// yesterday has no reading.
         var yesterday: Double?
         /// The arithmetic mean of the last seven raw readings.
         var sevenDayAverage: Double?
@@ -287,6 +290,62 @@ nonisolated enum TrendEngine {
         var perWeekDecimals: Int
     }
 
+    /// The four cells under the chart.
+    ///
+    /// Today and Yesterday are resolved by **calendar date**, not by position
+    /// in the history. Design reference §7.8 labels them "today's raw reading"
+    /// and "yesterday's raw reading", and a user who skipped today has neither
+    /// — taking the last two readings instead puts an older day's weight under
+    /// a "Today" label and sends the tap to Edit today for a day that is not
+    /// today. When the day genuinely has no reading the value is `nil` and the
+    /// cell renders the em dash.
+    ///
+    /// The seven-day average stays positional: §7.8 defines it as the mean of
+    /// the last seven raw readings, not of the last seven days.
+    ///
+    /// - Parameters:
+    ///   - readings: the daily reading history, oldest first.
+    ///   - trend: the full EWMA over that history.
+    ///   - now: the moment "today" is measured from.
+    ///   - calendar: the calendar the days are bucketed in.
+    static func stats(
+        for period: Period,
+        readings: [WeightSample],
+        trend: [Double],
+        now: Date = .now,
+        calendar: Calendar = .current
+    ) -> Stats {
+        let values = readings.map(\.kilograms)
+        let recent = values.suffix(7)
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+        return Stats(
+            today: reading(on: today, in: readings, calendar: calendar),
+            yesterday: reading(on: yesterday, in: readings, calendar: calendar),
+            sevenDayAverage: recent.isEmpty ? nil : recent.reduce(0, +) / Double(recent.count),
+            perWeek: summary(for: period, trend: trend).perWeek,
+            perWeekLabel: period.perWeekLabel,
+            perWeekDecimals: period.perWeekDecimals
+        )
+    }
+
+    /// The value recorded on one calendar day, if any.
+    private static func reading(
+        on day: Date?,
+        in readings: [WeightSample],
+        calendar: Calendar
+    ) -> Double? {
+        guard let day else { return nil }
+        return readings.last { calendar.startOfDay(for: $0.date) == day }?.kilograms
+    }
+
+    /// The positional variant, which cannot tell "today" from "the most recent
+    /// reading". Kept only so `WeightStore` still compiles; callers that have
+    /// the dated readings must use `stats(for:readings:trend:now:calendar:)`.
+    @available(
+        *, deprecated,
+        message: "Resolves Today and Yesterday positionally. Use stats(for:readings:trend:now:calendar:)."
+    )
     static func stats(for period: Period, values: [Double], trend: [Double]) -> Stats {
         let recent = values.suffix(7)
         return Stats(
@@ -297,6 +356,33 @@ nonisolated enum TrendEngine {
             perWeekLabel: period.perWeekLabel,
             perWeekDecimals: period.perWeekDecimals
         )
+    }
+
+    // MARK: - Direction
+
+    /// Which way a run of trend values is going. Spoken by the chart's
+    /// VoiceOver summary, which is the only place the picture becomes a
+    /// sentence.
+    enum Direction: String, Equatable, Sendable {
+        case rising
+        case falling
+        case level
+
+        /// The word VoiceOver reads.
+        var spoken: String { rawValue }
+    }
+
+    /// Below this much total change over the plotted range the line is called
+    /// level rather than rising or falling. It is half of the 0.1 kg the
+    /// product rounds to, so a change too small to have been typed is not
+    /// announced as a direction.
+    static let levelThreshold: Double = 0.05
+
+    /// The direction of a trend line from its first plotted value to its last.
+    static func direction(from first: Double, to last: Double) -> Direction {
+        let change = last - first
+        guard abs(change) >= levelThreshold else { return .level }
+        return change > 0 ? .rising : .falling
     }
 
     // MARK: - Formatting
