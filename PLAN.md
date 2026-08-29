@@ -14,9 +14,9 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
-| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | in progress |
-| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | in progress |
-| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | in progress |
+| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | fixing review findings |
+| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | in review |
+| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | in review |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
 | 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
@@ -190,3 +190,30 @@ Append-only. One line per state change, so a reconnecting session can see what h
 - Batch B launched: three agents in parallel on `feat/onboarding-screen`, `feat/log-screen`,
   `feat/trend-screen`, each confined to its own `Features/` folder and forbidden from
   touching Theme, Model, Health, Shared, RootView or `project.pbxproj`.
+- All three Batch B features implemented, each building and testing green, each confined to
+  its own `Features/` folder with `project.pbxproj` untouched. Verified independently rather
+  than on the agents' word.
+- Onboarding: code review PASS, design review FAIL on two rule violations (a `Color.white`
+  at a call site, a missing preview) plus the hero being centred. The hero was resolved from
+  the design source rather than guessed — the wrapper is `margin:40px 0 auto` with zero
+  horizontal margins in a column with no `text-align`, so the graphic is flush left. Also
+  fixing a Dynamic Type problem that could push the primary button off-screen at
+  accessibility sizes, which would lock a user out of the app entirely since onboarding
+  gates it.
+- Log and Trend both in review, two agents each.
+
+### Cross-feature gap to close after the Batch B merges
+
+`AppRouter` has no Edit-today route. §7.8 requires the Today stat cell to open Edit today,
+but the only hook is `routeToLogEntry()`, so tapping Today currently lands on the ruler
+entry screen instead. Trend could not fix it — `Features/Shared/` is forbidden during
+parallel work — and correctly reported it rather than editing. **This is the orchestrator's
+to land once Log and Trend are both merged**: add the route to `AppRouter`, have Log consume
+it, and verify the Today cell opens the edit screen.
+
+### Open question for the theming pass
+
+The period segments are 36 pt tall, under STEADY.md §11's 44 pt minimum. The design reference
+fixes 36 explicitly and the reference wins, so it was built as drawn. The likely resolution is
+a 36 pt visual inside a 44 pt tap target, since the reference puts the segment in a 4 pt-padded
+container that is itself 44 tall.
