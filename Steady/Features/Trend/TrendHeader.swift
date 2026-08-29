@@ -54,10 +54,17 @@ struct TrendHeader: View {
             }
             .padding(.top, Metrics.space2)
 
-            Text(summary.subLine)
-                .steadyTextStyle(.cardLabelNumeric)
-                .foregroundStyle(Palette.ac)
-                .padding(.top, Metrics.space2)
+            // Week has no sub-line at all (§7.3's empty state keeps its height
+            // with a non-breaking space, which only means something if an
+            // *empty* string does not). An unconditional `Text("")` still
+            // reports a full line box, so Week picked up 8 + 13 pt of dead
+            // space that pushed the whole screen down.
+            if !summary.subLine.isEmpty {
+                Text(summary.subLine)
+                    .steadyTextStyle(.cardLabelNumeric)
+                    .foregroundStyle(Palette.ac)
+                    .padding(.top, Metrics.space2)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(headlineAccessibilityLabel)
