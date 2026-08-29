@@ -134,3 +134,33 @@ The repair was one argument. The lesson was the default value: an optional param
 silently disables a behaviour is a trap, and the real fix was deleting the default so that
 forgetting it fails to compile. That change immediately surfaced four more call sites
 quietly relying on the same implicit `nil`.
+
+### The first screen, and the thing that gates the app
+
+Onboarding is two screens shown exactly once. A welcome that states the premise — noisy dots
+with one calm line drawn through them, which is the product in a single picture and the basis
+of the app mark — and a permission screen that asks for Apple Health and nothing else.
+
+The second screen shows two toggles, both already on, labelled "Read weight" and "Write
+weight". They are not controls. They are a picture of what the system sheet is about to ask
+for, so the real dialog arrives as a confirmation rather than a surprise. Building them as
+inert shapes rather than disabled switches matters for the same reason: a disabled switch
+invites a tap and then refuses it, while a drawing does not make the offer.
+
+"Maybe later" completes onboarding rather than blocking it. The user lands on the access-off
+state with a visible way back in. A one-time flow that can be re-entered is not a one-time
+flow, and a permission screen that will not let you past is a wall.
+
+The interesting problem was not visual. Neither screen scrolled, and neither capped its type
+size, so at accessibility text sizes the headline and the card pushed the primary button off
+the bottom of the display. On a normal screen that is a cosmetic annoyance. Here it locks
+the user out of the entire app, because onboarding is the gate. Measured at the largest
+setting, the welcome column runs 1574 pt against an 874 pt screen — roughly 700 pt of it,
+including both buttons, simply unreachable.
+
+The fix is a scrolling fallback above a threshold, but the detail that makes it correct is a
+minimum height equal to the display. Without it, the spacers that distribute the layout
+collapse to zero inside a scroll view, and the design's evenly-split column would snap to
+top-packed the moment the threshold was crossed — a visible jolt at a boundary the user does
+not know exists. With it, the first accessibility size measures exactly the display height
+with nothing to scroll: the same layout, byte for byte, with an inert scroll view around it.
