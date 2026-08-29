@@ -18,6 +18,12 @@ struct SteadyApp: App {
             RootView()
                 .environment(store)
                 .environment(router)
+                // The app tint comes from the palette, not from an
+                // `AccentColor` asset, so `Palette` stays the one place a
+                // Steady colour is named. Without it SwiftUI falls back to
+                // the system blue, which is a semantic colour STEADY.md §10
+                // forbids and is not the design's accent.
+                .tint(Palette.ac)
         }
     }
 }
