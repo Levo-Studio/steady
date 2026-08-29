@@ -15,7 +15,7 @@ import Foundation
 /// is `ln(0.5) / ln(0.82) ≈ 3.5` days, which absorbs a salt or carbohydrate
 /// swing of a kilo or two while still turning inside a week of a real change of
 /// direction. It is fixed by the design and is not a tuning knob.
-enum TrendEngine {
+nonisolated enum TrendEngine {
 
     /// The trend smoothing factor. Fixed.
     static let alpha: Double = 0.18

@@ -12,7 +12,7 @@ import CoreGraphics
 ///
 /// There is exactly one spacing scale, base 14, each step ×1.68. If a layout
 /// wants 12, 16 or 20 it is off the scale — the nearest scale value is correct.
-enum Metrics {
+nonisolated enum Metrics {
 
     // MARK: - Spacing scale (design reference §4)
 

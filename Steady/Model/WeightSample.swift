@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Kilograms only. The design is drawn in kg and there is no settings screen
 /// to switch units, so there is no unit on this type to get wrong.
-struct WeightSample: Identifiable, Hashable, Sendable {
+nonisolated struct WeightSample: Identifiable, Hashable, Sendable {
 
     /// The HealthKit sample's UUID. `nil` for a value that has not been
     /// written yet.
@@ -50,7 +50,7 @@ struct WeightSample: Identifiable, Hashable, Sendable {
     }
 }
 
-extension WeightSample {
+nonisolated extension WeightSample {
 
     /// The reading rounded to the 0.1 kg the product works in.
     static func snap(_ kilograms: Double) -> Double {

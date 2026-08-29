@@ -9,7 +9,7 @@ import CoreGraphics
 import Foundation
 
 /// The selected range on the Trend screen. There are exactly three.
-enum Period: String, CaseIterable, Identifiable, Sendable {
+nonisolated enum Period: String, CaseIterable, Identifiable, Sendable {
     case week
     case month
     case year

@@ -15,21 +15,21 @@ import UIKit
 /// setting only — there is no manual toggle anywhere in the product. Every token
 /// is a dynamic colour that resolves against the trait collection, so a single
 /// `Palette.ink` is correct in both appearances.
-enum Palette {
+nonisolated enum Palette {
 
     // MARK: - Tokens
 
     /// Screen background.
-    nonisolated static let bg = dynamic(light: .hex(0xF4F4F2), dark: .hex(0x0E100F))
+    static let bg = dynamic(light: .hex(0xF4F4F2), dark: .hex(0x0E100F))
 
     /// Cards, tab bar, stepper buttons.
-    nonisolated static let sur = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x191D1B))
+    static let sur = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x191D1B))
 
     /// Primary text; fill of the neutral primary button.
-    nonisolated static let ink = dynamic(light: .hex(0x111312), dark: .hex(0xF2F3F1))
+    static let ink = dynamic(light: .hex(0x111312), dark: .hex(0xF2F3F1))
 
     /// Labels, secondary text, inactive segments.
-    nonisolated static let mut = dynamic(light: .hex(0x6B6F6D), dark: .hex(0x8B908D))
+    static let mut = dynamic(light: .hex(0x6B6F6D), dark: .hex(0x8B908D))
 
     /// Accent: trend line, interactive text, Save/Update fill.
     ///
@@ -38,51 +38,51 @@ enum Palette {
     /// converted through OKLab into Display P3 so both themes stay perceptually
     /// matched. The light accent sits marginally outside sRGB, which is exactly
     /// why it is not defined as a hex triplet.
-    nonisolated static let ac = dynamic(
+    static let ac = dynamic(
         light: .oklch(l: 0.52, c: 0.13, h: 235),
         dark: .oklch(l: 0.76, c: 0.12, h: 235)
     )
 
     /// Text on an accent fill. Deliberately *not* white in dark mode — the dark
     /// accent is a light blue, so its label is near-black.
-    nonisolated static let acink = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x0A1015))
+    static let acink = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x0A1015))
 
     /// Delta badge fill, check-circle fill.
-    nonisolated static let acsoft = dynamic(light: .hex(0xE5EEF5), dark: .hex(0x17303F))
+    static let acsoft = dynamic(light: .hex(0xE5EEF5), dark: .hex(0x17303F))
 
     /// Text on `acsoft`.
-    nonisolated static let acsoftink = dynamic(light: .hex(0x215480), dark: .hex(0x9FD2F2))
+    static let acsoftink = dynamic(light: .hex(0x215480), dark: .hex(0x9FD2F2))
 
     /// Area fill under the trend line.
-    nonisolated static let glow = dynamic(
+    static let glow = dynamic(
         light: .rgba(33, 84, 128, 0.14),
         dark: .rgba(120, 190, 235, 0.20)
     )
 
     /// Raw daily dots and the thin raw polyline. Much stronger in dark, because
     /// the dots need more presence against a near-black ground.
-    nonisolated static let raw = dynamic(
+    static let raw = dynamic(
         light: .rgba(17, 19, 18, 0.32),
         dark: .rgba(224, 232, 230, 0.50)
     )
 
     /// Hairline dividers.
-    nonisolated static let line = dynamic(
+    static let line = dynamic(
         light: .rgba(0, 0, 0, 0.13),
         dark: .rgba(255, 255, 255, 0.15)
     )
 
     /// Delete, and only delete. Never a colour code for a weight gain.
-    nonisolated static let danger = dynamic(
+    static let danger = dynamic(
         light: .oklch(l: 0.45, c: 0.17, h: 8),
         dark: .oklch(l: 0.70, c: 0.15, h: 8)
     )
 
     /// Text on a danger fill.
-    nonisolated static let dangerink = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x1A0C0B))
+    static let dangerink = dynamic(light: .hex(0xFFFFFF), dark: .hex(0x1A0C0B))
 
     /// Destructive-button fill in the confirm sheet.
-    nonisolated static let dangersoft = dynamic(
+    static let dangersoft = dynamic(
         light: .hex(0xF7E9EC),
         dark: .rgba(232, 120, 140, 0.15)
     )
@@ -90,13 +90,13 @@ enum Palette {
     // MARK: - Ruler (design reference §5)
 
     /// Every fifth tick on the ruler strip.
-    nonisolated static let tickMajor = dynamic(
+    static let tickMajor = dynamic(
         light: .rgba(17, 19, 18, 0.42),
         dark: .rgba(242, 243, 241, 0.62)
     )
 
     /// The remaining ruler ticks.
-    nonisolated static let tickMinor = dynamic(
+    static let tickMinor = dynamic(
         light: .rgba(17, 19, 18, 0.16),
         dark: .rgba(242, 243, 241, 0.24)
     )
@@ -104,10 +104,10 @@ enum Palette {
     // MARK: - Delete confirmation (design reference §7.7)
 
     /// The scrim over the blurred screen behind the delete sheet.
-    nonisolated static let scrim = Color(uiColor: .rgba(10, 9, 14, 0.5))
+    static let scrim = Color(uiColor: .rgba(10, 9, 14, 0.5))
 
     /// The only shadow in the product.
-    nonisolated static let sheetShadow = Color(uiColor: .rgba(10, 9, 14, 0.4))
+    static let sheetShadow = Color(uiColor: .rgba(10, 9, 14, 0.4))
 
     // MARK: - Construction
 
@@ -120,7 +120,7 @@ enum Palette {
 
 // MARK: - Literal colour construction
 
-private extension UIColor {
+nonisolated private extension UIColor {
 
     /// An opaque sRGB colour from a `0xRRGGBB` literal.
     static func hex(_ value: UInt32) -> UIColor {

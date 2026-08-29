@@ -14,7 +14,7 @@ import HealthKit
 /// `authorizationStatus` for a read type answers `.sharingAuthorized` even when
 /// the user denied reading, by design, so that apps cannot detect a denial. So
 /// nothing here branches on read status.
-enum HealthAccessState: Sendable, Equatable {
+nonisolated enum HealthAccessState: Sendable, Equatable {
     /// No health data on this device at all.
     case unavailable
     /// Steady can see readings, or can write them, or both.
@@ -23,7 +23,7 @@ enum HealthAccessState: Sendable, Equatable {
     case off
 }
 
-enum HealthServiceError: Error, Sendable {
+nonisolated enum HealthServiceError: Error, Sendable {
     /// HealthKit is not available on this device.
     case unavailable
     /// The sample belongs to another source. HealthKit refuses to delete it and
@@ -37,7 +37,7 @@ enum HealthServiceError: Error, Sendable {
 ///
 /// Behind a protocol so the store can be faked in tests — no test touches the
 /// real health database.
-protocol HealthServicing: Sendable {
+nonisolated protocol HealthServicing: Sendable {
 
     /// Whether this device has health data at all.
     var isAvailable: Bool { get }

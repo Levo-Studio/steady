@@ -12,7 +12,7 @@ import SwiftUI
 /// Helvetica Neue throughout, only two weights — 400 Regular and 500 Medium.
 /// Tracking is authored in `em` and negative, tightening as the type grows;
 /// it is multiplied out against the point size here.
-struct SteadyTextStyle: Sendable, Equatable {
+nonisolated struct SteadyTextStyle: Sendable, Equatable {
 
     enum Weight: Sendable {
         case regular   // 400
@@ -75,7 +75,7 @@ struct SteadyTextStyle: Sendable, Equatable {
 
 // MARK: - The named styles
 
-extension SteadyTextStyle {
+nonisolated extension SteadyTextStyle {
 
     /// `104 / 1`, 500, −0.055em, tabular. Log, Edit and Already-logged.
     static let entryValue = Self(

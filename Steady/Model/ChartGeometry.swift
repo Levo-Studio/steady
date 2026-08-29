@@ -15,7 +15,7 @@ import Foundation
 /// Pure and deterministic — no SwiftUI, no HealthKit. The chart is drawn by hand
 /// with `Canvas` and `Path` rather than Swift Charts precisely so that these
 /// numbers are the ones that reach the screen.
-struct ChartGeometry: Equatable, Sendable {
+nonisolated struct ChartGeometry: Equatable, Sendable {
 
     /// The raw readings, one point each.
     var dots: [CGPoint]
