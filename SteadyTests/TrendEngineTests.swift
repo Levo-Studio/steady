@@ -361,4 +361,16 @@ struct TrendEngineTests {
         #expect(TrendEngine.format(72.44, decimals: 1) == "72.4")
         #expect(TrendEngine.format(nil, decimals: 1) == "—")
     }
+
+    @Test("A value that rounds to zero never prints as a negative zero")
+    func negativeZeroIsNeverPrinted() {
+        // The guard has to be on the *rounded* value: −0.04 is not zero, but
+        // at one decimal it prints as "-0.0" unless it is normalised first.
+        #expect(TrendEngine.format(-0.04, decimals: 1, signed: true) == "+0.0")
+        #expect(TrendEngine.format(-0.04, decimals: 1) == "0.0")
+        #expect(TrendEngine.format(-0.0001, decimals: 2, signed: true) == "+0.00")
+        #expect(TrendEngine.format(-0.0, decimals: 1) == "0.0")
+        // A value that genuinely rounds to a negative still shows its sign.
+        #expect(TrendEngine.format(-0.06, decimals: 1, signed: true) == "-0.1")
+    }
 }

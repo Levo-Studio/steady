@@ -307,8 +307,12 @@ nonisolated enum TrendEngine {
     /// locale-independent: the design is drawn with a decimal point.
     static func format(_ value: Double?, decimals: Int, signed: Bool = false) -> String {
         guard let value else { return "—" }
-        // Keep a value that rounds to zero from printing as "-0.0".
-        let normalised = value == 0 ? 0 : value
+        // Keep a value that *rounds* to zero from printing as "-0.0". Guarding
+        // on the raw value is not enough: −0.04 is not zero but still prints
+        // as "-0.0" at one decimal.
+        let scale = pow(10.0, Double(decimals))
+        let rounded = (value * scale).rounded() / scale
+        let normalised = rounded == 0 ? 0 : rounded
         return String(format: "%\(signed ? "+" : "").\(decimals)f", normalised)
     }
 }
