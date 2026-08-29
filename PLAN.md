@@ -14,7 +14,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
-| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | fixes done, re-reviewing |
+| 1 | Onboarding screens | B | *(closed)* | `feat/onboarding-screen` | **merged** |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | fixes done, re-reviewing |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | fixing (resumed after API limit) |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
@@ -272,3 +272,11 @@ empty card before snapping to the real chart. `.readFailed` was added to `Weight
 specifically to prevent the first and is currently dead code as far as Trend is concerned.
 The fix is a pure, testable state value derived from `(hasLoaded, failure, hasReadings,
 accessState)`.
+
+- **Feature 1 (Onboarding) merged to `main` and pushed.** Both reviews passed on the second
+  round; build and tests verified on `main` itself. Worktree removed, branch deleted.
+- Note for the `LineBoxRenderer` fix, from the onboarding reviewer: `maybeLater`'s exact-44 pt
+  hit area depends on `resolved().lineBox` reporting `pointSize × 1` for a single line. The
+  fix must keep `sizeThatFits` returning `lines × lineBox` and change only the
+  wrapping/measurement path — if it starts reporting the font's natural height instead, that
+  button silently becomes ~46 pt and the 24/40 gaps shift by 1.2 pt.
