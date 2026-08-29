@@ -81,9 +81,13 @@ private struct CheckCircle: View {
                 CheckGlyph()
                     .stroke(
                         Palette.acsoftink,
-                        style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round)
+                        style: StrokeStyle(
+                            lineWidth: LogMetrics.checkGlyphStroke,
+                            lineCap: .round,
+                            lineJoin: .round
+                        )
                     )
-                    .frame(width: 26, height: 26)
+                    .frame(width: LogMetrics.checkGlyphBox, height: LogMetrics.checkGlyphBox)
             }
             .accessibilityHidden(true)
     }
@@ -93,7 +97,7 @@ private struct CheckCircle: View {
 private struct CheckGlyph: Shape {
 
     func path(in rect: CGRect) -> Path {
-        let scale = rect.width / 26
+        let scale = rect.width / LogMetrics.checkGlyphBox
         var path = Path()
         path.move(to: CGPoint(x: 5 * scale, y: 13.5 * scale))
         path.addLine(to: CGPoint(x: 10 * scale, y: 18.5 * scale))

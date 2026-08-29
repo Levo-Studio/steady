@@ -8,6 +8,27 @@
 
 import SwiftUI
 
+// MARK: - Metrics local to Log
+
+/// The values the Log screens need that the design reference states only in
+/// their own sections, kept here rather than in the shared `Metrics` so the
+/// theme stays the vocabulary the whole app shares.
+nonisolated enum LogMetrics {
+
+    /// Design reference §7.5: the check is stroked at `2.6` in a `26` box.
+    static let checkGlyphBox: CGFloat = 26
+    static let checkGlyphStroke: CGFloat = 2.6
+
+    /// The vertical inset that lifts a header text button to the 44 pt minimum
+    /// without moving the row it sits in.
+    ///
+    /// STEADY.md §11: the target goes on the *label*, never on the parent
+    /// stack. "Cancel" and "Delete" are ~18 pt tall, so 13 either side reaches
+    /// 44; the same inset is then removed from the button's layout box so the
+    /// header keeps the height the design draws.
+    static let headerTargetInset: CGFloat = 13
+}
+
 // MARK: - Screen padding
 
 extension View {
