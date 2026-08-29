@@ -50,14 +50,14 @@ follows the system setting only.
 | `sur` | `#ffffff` | cards, tab bar, stepper buttons |
 | `ink` | `#111312` | primary text; fill of the neutral primary button |
 | `mut` | `#6b6f6d` | labels, secondary text, inactive segments |
-| `ac` | `oklch(0.52 0.13 235)` ≈ `#2b6ba8` | accent: trend line, interactive text, Save/Update fill |
+| `ac` | `oklch(0.52 0.13 235)` → `#0072a8` | accent: trend line, interactive text, Save/Update fill |
 | `acink` | `#ffffff` | text on an accent fill |
 | `acsoft` | `#e5eef5` | delta badge fill, check-circle fill |
 | `acsoftink` | `#215480` | text on `acsoft` |
 | `glow` | `rgba(33, 84, 128, .14)` | area fill under the trend line |
 | `raw` | `rgba(17, 19, 18, .32)` | raw daily dots and the thin raw polyline |
 | `line` | `rgba(0, 0, 0, .13)` | hairline dividers |
-| `danger` | `oklch(0.45 0.17 8)` ≈ `#c8322f` | Delete |
+| `danger` | `oklch(0.45 0.17 8)` → `#9c1143` | Delete |
 | `dangerink` | `#ffffff` | text on a danger fill |
 | `dangersoft` | `#f7e9ec` | destructive-button fill in the confirm sheet |
 
@@ -69,7 +69,7 @@ follows the system setting only.
 | `sur` | `#191d1b` |
 | `ink` | `#f2f3f1` |
 | `mut` | `#8b908d` |
-| `ac` | `oklch(0.76 0.12 235)` ≈ `#5fbcea` |
+| `ac` | `oklch(0.76 0.12 235)` → `#5abdf2` |
 | `acink` | `#0a1015` |
 | `acsoft` | `#17303f` |
 | `acsoftink` | `#9fd2f2` |
@@ -82,9 +82,21 @@ follows the system setting only.
 
 Notes that matter:
 
-- The accents are authored in **OKLCH**, not sRGB hex. The hex values are approximations
-  for reference only. Define the colours from the OKLCH figures so the two themes stay
-  perceptually matched; do not eyeball them from the hex.
+- The accents and both danger values are authored in **OKLCH**, and OKLCH is what the
+  approved concept actually rendered. In the source, hex only ever appears as a CSS
+  fallback (`var(--ac, #2b6ba8)`) and the variable is always set, so the fallback never
+  applied. **Build every colour from the OKLCH figures.** The arrow values in the tables
+  above are the true conversions, given so nobody has to trust a guess — they are not an
+  alternative source.
+- Two of those conversions differ sharply from the hex fallbacks that were previously
+  quoted here, so if you have seen `#2b6ba8` or `#c8322f` described as the accent and the
+  danger colour, that was wrong: the real values are `#0072a8` and the crimson `#9c1143`.
+- **`ac` in light mode falls outside sRGB.** Construct the palette in Display P3 (or any
+  wide-gamut space); clamping it into sRGB visibly dulls the accent.
+- **The logo is the one exception.** `branding/` and the wordmark lockup use literal
+  `#2b6ba8` / `#5fbcea`, because the logo sheet in the design project is authored in hex
+  rather than OKLCH. The app UI and the brand mark are therefore very slightly different
+  blues. That is how the source is; do not "fix" either one to match the other.
 - `acink` is **not** white in dark mode — it is near-black `#0a1015`, because the dark
   accent is a light blue. A white label on the dark Save button is a bug.
 - `raw` is much stronger in dark (50%) than in light (32%). This is deliberate: the dots
@@ -286,7 +298,7 @@ X is `i / (n − 1) × width`, or centred when there is a single point.
 
 ### Headline figures
 
-| Range | Headline (`64` pt) | Prefix | Sub-line (13 pt, `ac`) | Badge |
+| Range | Headline (`64` pt) | `⌀ ` on the *label* | Sub-line (13 pt, `ac`) | Badge |
 |---|---|---|---|---|
 | Week | current trend value | none | *(empty)* | `+0.3 kg this week` — change vs. the trend 7 days ago, 1 decimal |
 | Month | mean trend over 30 days | `⌀ ` | `this week 72.6` | `⌀ +0.03 kg` — average change per week, **2 decimals** |
@@ -297,8 +309,9 @@ carry an explicit `+`. The decimal count switches with the range: **1 on Week, 2
 and Year**, because a weekly average over a year is a small number and one decimal would
 round most real progress to `0.0`.
 
-The `⌀` prefix on the label is the entire mechanism that tells the user the headline
-changed meaning. It is not decorative — never drop it.
+The `⌀` prefix sits on the **label** — the row reads "⌀ Trend weight" — not on the numeral
+itself. It is the entire mechanism that tells the user the headline changed meaning, so it
+is not decorative and must never be dropped. (§7.8 is the authoritative placement.)
 
 ---
 

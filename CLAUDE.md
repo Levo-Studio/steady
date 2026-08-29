@@ -27,7 +27,8 @@ higher one wins.
 
 This is a native iOS app, so the global default web stack does not apply:
 
-- Swift 6, SwiftUI, Swift Charts
+- Swift 6, SwiftUI. Charts are drawn by hand with `Canvas` / `Path` — **not** Swift
+  Charts, see STEADY.md §5
 - HealthKit for all persistence — read and write. No custom backend, no accounts,
   no analytics, no third-party sync.
 - App Intents for Shortcuts integration
