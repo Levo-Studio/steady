@@ -74,7 +74,12 @@ nonisolated protocol HealthServicing: Sendable {
 /// HealthKit.
 actor HealthService: HealthServicing {
 
-    private let store = HKHealthStore()
+    /// `HKHealthStore` is documented as safe to use from any thread — its
+    /// queries run on queues of their own — but it is not marked `Sendable`.
+    /// It is held `nonisolated(unsafe)` so the observation stream can use this
+    /// one store rather than standing up a second one, which would open a
+    /// second connection to the health database for no reason.
+    private nonisolated(unsafe) let store = HKHealthStore()
     private let quantityType = HKQuantityType(.bodyMass)
     private let calendar: Calendar
     private let appBundleIdentifier: String?
@@ -117,11 +122,9 @@ actor HealthService: HealthServicing {
 
     func readDailyReadings() async throws -> [WeightSample] {
         let samples = try await rawSamples()
-        return TrendEngine.dailyReadings(
-            from: samples,
-            calendar: calendar,
-            steadyBundleIdentifier: appBundleIdentifier
-        )
+        // One value per day, the earliest sample of that calendar day, because
+        // the product is about morning weight under consistent conditions.
+        return TrendEngine.dailyReadings(from: samples, calendar: calendar)
     }
 
     private func rawSamples() async throws -> [WeightSample] {
@@ -203,32 +206,64 @@ actor HealthService: HealthServicing {
     // MARK: - Observation
 
     func changes() -> AsyncStream<Void> {
-        AsyncStream { continuation in
+        let store = StoreBox(store)
+        let type = quantityType
+        return AsyncStream { continuation in
             guard HKHealthStore.isHealthDataAvailable() else {
                 continuation.finish()
                 return
             }
+
+            // Two queries, because they do different jobs. The observer is what
+            // HealthKit will wake the app for when another app writes body mass
+            // while Steady is not running; the anchored query is what actually
+            // notices a change while it is.
+            let observer = HKObserverQuery(sampleType: type, predicate: nil) { _, completionHandler, _ in
+                continuation.yield(())
+                // HealthKit retries the notification until this is called.
+                completionHandler()
+            }
+            store.value.execute(observer)
+            store.value.enableBackgroundDelivery(for: type, frequency: .immediate) { _, _ in
+                // Background delivery is a convenience, not a requirement: the
+                // app reads on appear regardless. Nothing is logged either way
+                // — health data, and anything derived from it, never reaches a
+                // log.
+            }
+
             let task = Task {
                 // An anchored object query delivers the initial set and then
                 // every subsequent change, which is what keeps the trend in
                 // step with a reading written by another app.
-                let store = HKHealthStore()
                 let descriptor = HKAnchoredObjectQueryDescriptor(
-                    predicates: [.quantitySample(type: HKQuantityType(.bodyMass))],
+                    predicates: [.quantitySample(type: type)],
                     anchor: nil
                 )
                 do {
-                    for try await _ in descriptor.results(for: store) {
+                    for try await _ in descriptor.results(for: store.value) {
                         continuation.yield(())
                     }
                 } catch {
                     // A failed observation is not worth surfacing: the app still
-                    // reads on appear. Nothing is logged here — health data, and
-                    // anything derived from it, never reaches a log.
+                    // reads on appear.
                 }
                 continuation.finish()
             }
-            continuation.onTermination = { _ in task.cancel() }
+
+            continuation.onTermination = { _ in
+                task.cancel()
+                store.value.stop(observer)
+            }
         }
     }
+}
+
+/// Carries the one `HKHealthStore` across isolation boundaries.
+///
+/// `HKHealthStore` is thread-safe in practice but is not marked `Sendable`,
+/// and the observation stream's continuation handlers are. Boxing it is
+/// preferable to the alternative, which is a second store per stream.
+private nonisolated struct StoreBox: @unchecked Sendable {
+    let value: HKHealthStore
+    init(_ value: HKHealthStore) { self.value = value }
 }
