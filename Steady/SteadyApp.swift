@@ -15,7 +15,7 @@ struct SteadyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            root
                 .environment(store)
                 .environment(router)
                 // The app tint comes from the palette, not from an
@@ -25,5 +25,21 @@ struct SteadyApp: App {
                 // forbids and is not the design's accent.
                 .tint(Palette.ac)
         }
+    }
+
+    /// The app, or — in a debug build launched with `-steadyScenario` — one
+    /// screen state seeded from memory, so every state in design reference §7
+    /// can be rendered on a device and judged by looking at it.
+    @ViewBuilder
+    private var root: some View {
+        #if DEBUG
+        if let scenario = ScreenScenario.current {
+            ScreenScenarioHost(scenario: scenario)
+        } else {
+            RootView()
+        }
+        #else
+        RootView()
+        #endif
     }
 }
