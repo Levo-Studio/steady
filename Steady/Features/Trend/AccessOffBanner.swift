@@ -16,6 +16,14 @@ struct AccessOffBanner: View {
 
     let onAllow: () -> Void
 
+    /// STEADY.md §11: grow the target, never the drawing. "Allow" draws at
+    /// about `34 × 13`, so the label is padded past `44` in both axes, given
+    /// the hit shape there, and pulled back by the same amount — the banner
+    /// still measures `48` and the text still sits `20` from the edge. Putting
+    /// a `minHeight` on the row instead would expand the banner and leave the
+    /// button its intrinsic height, which is the mistake §11 names.
+    private static let tapTargetPad: CGFloat = 16
+
     var body: some View {
         HStack(spacing: Metrics.space3) {
             Text("Apple Health access is off")
@@ -26,7 +34,9 @@ struct AccessOffBanner: View {
                 Text("Allow")
                     .steadyTextStyle(.bannerAction)
                     .foregroundStyle(Palette.ac)
+                    .padding(Self.tapTargetPad)
                     .contentShape(.rect)
+                    .padding(-Self.tapTargetPad)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Allow")

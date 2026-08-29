@@ -23,6 +23,12 @@ struct PeriodControl: View {
     var onSelect: (Period) -> Void = { _ in }
 
     var body: some View {
+        // The container's `4` pt vertical padding lives on each segment rather
+        // than on the stack, so the segment's tap target fills the full 44 pt
+        // container while the drawn pill stays 36 — STEADY.md §11 names this
+        // control specifically: grow the target, never the drawing. The
+        // horizontal 4 stays on the stack, where it is not between anything the
+        // finger has to hit. Not one pixel moves.
         HStack(spacing: Metrics.periodControlGap) {
             ForEach(Period.allCases) { period in
                 let isSelected = period == selection
@@ -36,7 +42,8 @@ struct PeriodControl: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: Metrics.periodSegmentHeight)
                         .background(isSelected ? Palette.ink : .clear, in: .capsule)
-                        .contentShape(.capsule)
+                        .padding(.vertical, Metrics.periodControlPadding)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(period.title)
@@ -44,7 +51,7 @@ struct PeriodControl: View {
                 .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
             }
         }
-        .padding(Metrics.periodControlPadding)
+        .padding(.horizontal, Metrics.periodControlPadding)
         .background(Palette.bg, in: .capsule)
     }
 }
