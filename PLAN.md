@@ -15,8 +15,8 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 |---|---|---|---|---|---|
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
 | 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | fixes done, re-reviewing |
-| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | in review |
-| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | in review |
+| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | fixes done, re-reviewing |
+| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | fixing (resumed after API limit) |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
 | 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
@@ -251,3 +251,24 @@ how it survived two review rounds.
 Sequence: merge Onboarding, Log and Trend first, then fix `LineBoxRenderer` on `main`, then
 re-verify all three screens with **wrapped, multi-line text rendered**, not only measured.
 This must land before the theming pass signs anything off.
+
+### API session limit, and what it cost
+
+Four agents were killed mid-flight by a session limit. **Nothing was lost.** All three
+worktrees were clean with every commit already pushed, which is what the push-after-every-commit
+rule exists for. On resume: Onboarding 10 commits, Log 17, Trend 13, all green.
+
+Trend was the only one interrupted with work outstanding — it had landed six of its fixes
+(space-between header, the empty sub-line's line box, the 320 pt cap, real 44 pt tap targets,
+Today/Yesterday resolved by calendar date, the KeyframeAnimator fix) and died before the
+remaining six. Those were re-dispatched verbatim to a fresh agent rather than restarted.
+
+### Trend's outstanding blocker, restated so it cannot be lost again
+
+`TrendView` selects its state with `isEmpty = !store.hasReadings`, ignoring both
+`store.failure` and `store.hasLoaded`. Consequences: a user with years of history whose read
+fails is told "Your line starts after the first weigh-in", and a cold launch flashes the whole
+empty card before snapping to the real chart. `.readFailed` was added to `WeightStore`
+specifically to prevent the first and is currently dead code as far as Trend is concerned.
+The fix is a pure, testable state value derived from `(hasLoaded, failure, hasReadings,
+accessState)`.
