@@ -35,6 +35,18 @@ final class AppRouter {
     /// would sit there until some unrelated event happened to consume it.
     private(set) var wantsEditToday = false
 
+    /// Routes to Log and lets it decide which state to show.
+    ///
+    /// This is what a Shortcut asks for. On an empty day Log shows the ruler;
+    /// on a day that already has a reading it shows "Logged for today" with the
+    /// route into editing. Forcing the ruler here would let a Shortcut log a
+    /// second time over a day that is already done.
+    func routeToLog() {
+        tab = .log
+        wantsLogEntry = false
+        wantsEditToday = false
+    }
+
     /// Routes to Log and asks it to present entry rather than the
     /// already-logged state.
     func routeToLogEntry() {

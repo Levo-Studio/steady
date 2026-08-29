@@ -9,12 +9,13 @@
 import AppIntents
 import Foundation
 
-/// Opens Steady on the Log screen, ruler ready.
+/// Opens Steady on the Log screen.
 ///
-/// It asks the router for the *entry* screen rather than the Log tab, because
-/// on a day that is already logged the tab shows "Logged for today" and the
-/// point of the intent is to weigh in. So this always lands on the ruler,
-/// logged or not.
+/// On an empty day that is the ruler. On a day that already has a reading it is
+/// "Logged for today", with its route into editing — **not** a fresh ruler.
+/// Forcing the ruler would let a Shortcut, an automation or a stray Action
+/// Button press log a second time over a day that is already done, and the
+/// second reading would silently replace the first.
 ///
 /// Routing goes through `AppRouter.shared`, the same state the tab bar drives,
 /// so there is no second navigation path to keep in step.
@@ -23,7 +24,7 @@ struct LogWeightIntent: AppIntent {
     static let title: LocalizedStringResource = "Log Weight"
 
     static let description = IntentDescription(
-        "Opens Steady on the log screen with the ruler ready, whether or not today is already logged.",
+        "Opens Steady on the log screen. If today is already logged it shows that reading instead of a fresh ruler.",
         categoryName: "Logging",
         searchKeywords: ["weight", "weigh", "log", "scale"]
     )
@@ -33,7 +34,7 @@ struct LogWeightIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        AppRouter.shared.routeToLogEntry()
+        AppRouter.shared.routeToLog()
         return .result()
     }
 }
@@ -127,11 +128,29 @@ struct SaveWeightIntent: AppIntent {
         let value = WeightSample.snap(kilograms)
 
         if let today = try? await todaysReading(from: health) {
+            // Ask before doing anything. The reading that is already there is
+            // named in the question, because "today is already logged" is not
+            // enough to decide on — the number is what tells you whether this
+            // is a correction or a duplicate.
+            try await requestConfirmation(
+                result: .result(
+                    dialog: IntentDialog(
+                        "Today is already logged at \(formatted(today.kilograms)) kg."
+                    )
+                ),
+                confirmationActionName: .custom(
+                    acceptLabel: "Edit",
+                    acceptAlternatives: ["Change", "Open"],
+                    denyLabel: "Keep it",
+                    denyAlternatives: ["Cancel"]
+                )
+            )
+            // Confirmed. The editor is the one screen that can change or delete
+            // a reading deliberately, so the Shortcut hands over rather than
+            // writing behind the user's back.
             return .result(
                 opensIntent: EditTodayIntent(),
-                dialog: IntentDialog(
-                    "Today is already logged at \(formatted(today.kilograms)) kg. Opening Steady so you can change it."
-                )
+                dialog: IntentDialog("Opening today's reading.")
             )
         }
 

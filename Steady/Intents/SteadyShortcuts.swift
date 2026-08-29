@@ -17,6 +17,11 @@ struct SteadyShortcuts: AppShortcutsProvider {
     /// Blue, matching the app's accent rather than a system default.
     static let shortcutTileColor: ShortcutTileColor = .blue
 
+    /// `EditTodayIntent` is deliberately absent. It still appears when browsing
+    /// Steady's actions in the Shortcuts app, but it is not offered as a
+    /// ready-made shortcut, because reaching the editor is not something the
+    /// user should have to wire up — `SaveWeightIntent` hands over to it on its
+    /// own when the day is already logged.
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: LogWeightIntent(),
@@ -29,16 +34,6 @@ struct SteadyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Log Weight",
             systemImageName: "scalemass"
-        )
-
-        AppShortcut(
-            intent: EditTodayIntent(),
-            phrases: [
-                "Edit today's weight in \(.applicationName)",
-                "Change my weight in \(.applicationName)"
-            ],
-            shortTitle: "Edit Today",
-            systemImageName: "pencil"
         )
 
         AppShortcut(
