@@ -13,13 +13,13 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
-| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | — | `feat/foundation` | not started |
+| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | `../steady-worktrees/foundation` | `feat/foundation` | in progress |
 | 1 | Onboarding screens | B | — | `feat/onboarding` | blocked on 0 |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | — | `feat/log-screen` | blocked on 0 |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | — | `feat/trend-screen` | blocked on 0 |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
-| 6 | README + logo header | — | — | `docs/readme` | can run any time |
+| 6 | README + logo header | — | `../steady-worktrees/readme` | `docs/readme` | in progress |
 
 Legend: `not started` → `in progress` → `in review` → `reviews passed` → `merged`
 
@@ -133,3 +133,6 @@ Append-only. One line per state change, so a reconnecting session can see what h
   Claude Design project (concept 1f "Instrument, soft"). Committed to `main`.
 - `STEADY.md` committed to `main`.
 - `PLAN.md` committed to `main`. Batch A next.
+- Worktrees created: `feat/foundation`, `docs/readme`. Both agents launched.
+- Note: the existing brand mark in `branding/` is used for the README header; no new
+  logo is generated (owner instruction).
