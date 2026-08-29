@@ -113,8 +113,12 @@ final class WeightStore {
         TrendEngine.summary(for: period, trend: trend)
     }
 
+    /// The four cells under the chart.
+    ///
+    /// Resolved from the dated readings, not from their positions: Today and
+    /// Yesterday are calendar days, and a user who skipped today has neither.
     func stats(for period: Period) -> TrendEngine.Stats {
-        TrendEngine.stats(for: period, values: values, trend: trend)
+        TrendEngine.stats(for: period, readings: readings, trend: trend)
     }
 
     func series(for period: Period) -> TrendEngine.Series {
