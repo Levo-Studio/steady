@@ -300,7 +300,7 @@ accessState)`.
 
 ## Orchestrator work now due on `main`, in order
 
-1. **`LineBoxRenderer` truncation — blocking.** Styles below Helvetica Neue's ~1.174 truncate
+1. ~~**`LineBoxRenderer` truncation**~~ — **FIXED and merged.** Styles below Helvetica Neue's ~1.174 truncate
    instead of wrapping. Affected and to be re-checked with real wrapped text: Onboarding
    `.onboardingHeadline` (36/1.14, broken at the DEFAULT size), Log `FailureLine` (`.cardLabel`
    13/1, written to wrap) and the Edit meta line (`.metaNumeric` 14/1), Trend
@@ -322,3 +322,26 @@ accessState)`.
    badge overflows the card rather than the numeral giving way. Belongs with item 1.
 
 Then Feature 4 (App Intents) and Feature 5 (theming pass).
+
+- **Line-box truncation fixed and merged.** Root cause: `LineBoxRenderer.sizeThatFits`
+  returned `lines × lineBox`, and SwiftUI feeds a `TextRenderer`'s reported height straight
+  back to the text as the line-breaking proposal — so the renderer was measuring and being
+  measured by its own answer. With a box shorter than the font's natural line height only
+  `floor(reported / natural)` lines fit. For `.onboardingHeadline` that is
+  `floor(41.04 / 42.91) = 0`, i.e. one line, at the default type size.
+- Fix: measuring split from drawing. `LineBoxRenderer` no longer implements `sizeThatFits`
+  at all — a new `LineBoxLayout` proposes `(width, nil)` so the text wraps at the font's own
+  metrics, recovers the line count, and reports `lines × lineBox` upward. It implements
+  `explicitAlignment` for the text baselines, so the 104/22 "kg" lockup is byte-for-byte
+  unchanged; without it a custom `Layout` falls back to the box edges and the unit drifts 8 pt.
+  `sizeThatFits` still reports `lines × lineBox`, so `maybeLater`'s 15.5 and
+  `LogLayout.headerTargetInset`'s 14.5 are unaffected — both now pinned by tests.
+- Verified by **rasterising text and reading pixels back**, not by measuring frames — the
+  method that let this through twice. Line counting is geometric rather than run-based,
+  because tight boxes make descenders touch the next line's ascenders. The tests were proven
+  non-vacuous by reverting the fix and confirming 40+ failures.
+- `.onboardingHeadline` at `.large`: 1 line → 2. At `.accessibility5`: 3 → 4. Also fixed:
+  `healthRowSubtitle`, `cardLabel`, `metaNumeric`, `meta`, `healthRowTitle`, `editTitle`,
+  both primary button styles, `maybeLater`, `credit`, and at accessibility sizes the wordmark,
+  `periodSegment`, `bannerAction` and `eyebrow`.
+- Test suite is now **117 cases**, green on `main`.
