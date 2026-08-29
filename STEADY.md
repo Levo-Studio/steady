@@ -185,10 +185,22 @@ show the empty state from design reference §7.3.
 
 ### Multiple readings on one day
 
-HealthKit can hold several samples for a date. Steady collapses a day to **one value: the
-earliest sample of that calendar day**, because the product is about morning weight taken
-under consistent conditions. Writing when a sample already exists for today replaces it
-(delete then write) rather than adding a second.
+HealthKit can hold several samples for a date. Steady collapses a day to one value by two
+rules, in order:
+
+1. **If Steady itself wrote a sample that day, that sample is the day's value** — the most
+   recent one, if there are several.
+2. **Otherwise, the earliest sample of the calendar day**, because the product is about
+   morning weight taken under consistent conditions.
+
+Rule 1 exists because rule 2 alone loses the user's own input. A smart scale writing at
+06:00 would outrank a weight the person deliberately logged at 20:00, so their entry — and
+any edit of it — would silently never appear. An explicit entry always wins over another
+source.
+
+Ownership is decided by bundle identifier and is **passed into** `TrendEngine`, never looked
+up there; the engine stays pure. Writing when Steady already has a sample for today replaces
+it (delete then write) rather than adding a second.
 
 ---
 
