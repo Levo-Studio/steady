@@ -63,7 +63,12 @@ nonisolated enum RulerGeometry {
 
     /// The weight a tick index stands for.
     static func kilograms(forTick index: Int) -> Double {
-        snap(Double(index) * kilogramsPerTick)
+        // Deliberately not clamped. The clamp belongs to the *value*, not to the
+        // drawing: a ruler does not stop being a ruler past the last reachable
+        // reading. Clamping here collapsed every out-of-range index onto the
+        // needle, stacking a dozen strokes on top of each other at 20.0 kg and
+        // leaving half the strip blank.
+        WeightSample.snap(Double(index) * kilogramsPerTick)
     }
 
     /// A single `0.1` kg step, as the `−` and `+` buttons make it.
@@ -99,11 +104,13 @@ nonisolated enum RulerGeometry {
     /// The clamp matters at the ends of the range: at `20.0` an unclamped left
     /// label would read `18.8`, a weight the ruler cannot reach.
     static func bounds(at value: Double) -> (lower: Double, upper: Double) {
+        // Also not clamped, for the same reason and one more: the needle is
+        // always centred, so a clamped end-point would claim the edge of the
+        // strip held a value the centre is already showing. The labels describe
+        // the strip that is drawn, and the strip simply stops moving once the
+        // value can go no further.
         let centre = clamp(value)
-        return (
-            clamp(centre - Metrics.rulerHalfWindow),
-            clamp(centre + Metrics.rulerHalfWindow)
-        )
+        return (centre - Metrics.rulerHalfWindow, centre + Metrics.rulerHalfWindow)
     }
 }
 

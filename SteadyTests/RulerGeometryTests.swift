@@ -165,11 +165,29 @@ struct RulerGeometryTests {
     }
 
     @Test("The labels are clamped to the plausible range")
-    func boundsAreClamped() {
+    func boundsDescribeTheStripNotTheClamp() {
+        // The needle is always centred, so the end-points must stay symmetric
+        // about the value even at the extremes — a clamped end-point would
+        // claim the edge of the strip held the value the centre already shows.
         let low = RulerGeometry.bounds(at: WeightSample.plausibleRange.lowerBound)
-        #expect(low.lower == WeightSample.plausibleRange.lowerBound)
+        #expect(low.lower == WeightSample.plausibleRange.lowerBound - Metrics.rulerHalfWindow)
+        #expect(low.upper == WeightSample.plausibleRange.lowerBound + Metrics.rulerHalfWindow)
+
         let high = RulerGeometry.bounds(at: WeightSample.plausibleRange.upperBound)
-        #expect(high.upper == WeightSample.plausibleRange.upperBound)
+        #expect(high.upper == WeightSample.plausibleRange.upperBound + Metrics.rulerHalfWindow)
+    }
+
+    @Test("The strip keeps its ticks apart at the clamp")
+    func stripDoesNotCollapseAtTheClamp() {
+        // Clamping the tick-to-kilogram mapping used to fold every index below
+        // the floor onto the needle, stacking a dozen strokes and blanking half
+        // the strip.
+        let floor = WeightSample.plausibleRange.lowerBound
+        let centre = RulerGeometry.tickIndex(for: floor)
+        let offsets = (centre - 12 ... centre).map {
+            RulerGeometry.offsetFromNeedle(ofTick: $0, at: floor)
+        }
+        #expect(Set(offsets).count == offsets.count)
     }
 }
 
