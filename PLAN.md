@@ -17,8 +17,8 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | 1 | Onboarding screens | B | *(closed)* | `feat/onboarding-screen` | **merged** |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | *(closed)* | `feat/log-screen` | **merged** |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | *(closed)* | `feat/trend-screen` | **merged** |
-| 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
-| 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
+| 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | ready to start |
+| 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | ready to start |
 | 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
 
 Legend: `not started` → `in progress` → `in review` → `reviews passed` → `merged`
@@ -345,3 +345,43 @@ Then Feature 4 (App Intents) and Feature 5 (theming pass).
   both primary button styles, `maybeLater`, `credit`, and at accessibility sizes the wordmark,
   `periodSegment`, `bannerAction` and `eyebrow`.
 - Test suite is now **117 cases**, green on `main`.
+
+## Owner-requested scope added mid-run: motion and UX
+
+The owner looked at the running app and asked for the delete sheet flush to the edges, a
+better-animated Trend screen, and springy controls throughout. This contradicted §9, which
+enumerated four movements and forbade springs — so **the design reference was rewritten
+first**, because it is what every review agent judges against and the new work would
+otherwise have been rejected as a deviation. §9 is now a three-spring system (`press` 0.28/0.7,
+`settle` 0.42/0.82, `present` 0.5/0.85) and §7.7 specifies a flush sheet.
+
+**Merged.** 13 commits, reviewed and passed on correctness and design. Highlights:
+
+- **The placeholder defect the owner spotted was real.** Helvetica sets the em dash ~0.23 em
+  above the baseline, so at 64 pt the bar sat ~15 pt up while the 15 pt "kg" only reaches ~11
+  — it cleared the unit entirely, and the digits it stands in for centre ~23 pt up. It now
+  reads the dash's own bounding box from the font and places it on the numerals' centre-line;
+  measured on device to within one pixel.
+- **The airiness was the stats grid, not the chart box.** Every cell asked for
+  `maxHeight: .infinity` so the dividers would run full height, which made the grid a
+  vertically flexible child competing with the spacer below it. §7.8's 111 pt rows were
+  rendering at 156 and the grid at 313 instead of 226.
+- **The card-less Trend screenshot was not a regression** — it was the agent's uncommitted
+  debug rehearsal, which laid the header and chart straight onto `bg`.
+- Animations were verified by **recording video and stepping frames**, not by reading. That
+  caught two bugs reading would not: the chart draw-in never ran (a triggered
+  `KeyframeAnimator` is born already settled when insertion and `onAppear` share a render
+  pass), and the naive fix made it loop forever every 0.45 s.
+
+## Also fixed on `main`
+
+- **The app had no icon at all.** `AppIcon.appiconset` declared three 1024 slots and contained
+  no images, and `ASSETCATALOG_COMPILER_APPICON_NAME` still pointed at it, so
+  `steady-icon.icon` was never in the build. Moved into the target, setting repointed, empty
+  asset set removed, verified by rendering the emitted PNG. Its mark was also `#0088FF`, a
+  generic system blue, where §8 specifies the logo hex.
+- **Release builds were broken** and had been for some time: `#Preview` blocks compile in
+  Release, and four Log previews referenced DEBUG-only helpers. 36 errors. Found by the motion
+  review, which checked `origin/main` to confirm it was inherited rather than introduced.
+
+Remaining: Feature 4 (App Intents), Feature 5 (theming pass).
