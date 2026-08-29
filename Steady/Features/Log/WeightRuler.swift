@@ -9,8 +9,10 @@ import SwiftUI
 
 /// The tick strip that scrolls under a fixed needle.
 ///
-/// The needle never moves. The strip does, 1:1 with the finger, and the reading
-/// under the needle snaps to `0.1` kg — the only resolution the product has.
+/// The needle never moves. The strip does, in `0.1` kg detents: it is drawn
+/// from the snapped reading, so a tick is always aligned to the needle and the
+/// strip lands visibly and haptically on each one.
+///
 /// There is no keypad, no picker and no text field anywhere in the app, so this
 /// control is the entire input and it carries the VoiceOver adjustable action
 /// as well.
@@ -19,28 +21,11 @@ struct WeightRuler: View {
     /// The reading, always snapped to `0.1` kg.
     @Binding var value: Double
 
-    /// Where the strip actually is while a finger is down. `nil` between drags,
-    /// when the strip sits exactly on the reading.
-    ///
-    /// This is what lets the strip track the finger continuously while the
-    /// number above it stays snapped: they are two different quantities and
-    /// conflating them either makes the ticks step in `14.2` pt lurches or
-    /// leaves the reading showing a precision the product does not have.
-    @State private var continuousValue: Double?
+    /// Where the drag began, and the tick the haptic last fired on. Both live
+    /// only for the duration of one gesture.
     @State private var dragStartValue: Double?
     @State private var tracker: RulerTickTracker?
     @State private var haptics = RulerHaptics()
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// The settle back onto the nearest tick when the finger lifts. Design
-    /// reference §5 names it as the one part of the drag that *is* an
-    /// animation, and the one part Reduce Motion removes.
-    private static let settleDuration: Double = 0.18
-
-    /// Where the strip is drawn: the finger's position while dragging, the
-    /// reading otherwise.
-    private var renderValue: Double { continuousValue ?? value }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,6 +33,10 @@ struct WeightRuler: View {
             bounds
                 .padding(.top, Metrics.space2)
         }
+        // Design reference §5: a `354 × 40` strip inside a container of `67`.
+        // The strip and its labels measure ~60, so the container is stated
+        // rather than inferred and the slack falls below the labels.
+        .frame(height: Metrics.rulerContainerHeight, alignment: .top)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Weight")
         .accessibilityValue(Text(accessibilityValue))
@@ -63,7 +52,7 @@ struct WeightRuler: View {
     // MARK: - The strip
 
     private var strip: some View {
-        TickStrip(value: renderValue)
+        TickStrip(value: value)
             .frame(height: Metrics.rulerStripHeight)
             .overlay(alignment: .center) { needle }
             // The strip is 40 pt tall, under the 44 pt minimum, so the grab
@@ -115,20 +104,16 @@ struct WeightRuler: View {
                     if tracker.advance(to: next) > 0 { haptics.tick() }
                     self.tracker = tracker
                 }
-                continuousValue = next
+                // The strip is detented: it is drawn from the snapped
+                // reading, so the tick under the needle is always aligned to
+                // it and the strip never rests between ticks — during the drag
+                // or after it. There is nothing left to settle on release, and
+                // §9 allows no fifth movement to settle it with.
                 value = RulerGeometry.snap(next)
             }
             .onEnded { _ in
-                value = RulerGeometry.snap(continuousValue ?? value)
                 dragStartValue = nil
                 tracker = nil
-                if reduceMotion {
-                    continuousValue = nil
-                } else {
-                    withAnimation(.easeOut(duration: Self.settleDuration)) {
-                        continuousValue = nil
-                    }
-                }
             }
     }
 
@@ -156,18 +141,13 @@ struct WeightRuler: View {
 
 /// 25 ticks `14.2` pt apart, every fifth one tall.
 ///
-/// Animatable so the settle after a drag interpolates the strip's position
-/// rather than jumping it. The ticks are drawn outwards from the one nearest
-/// the needle, which keeps the major/minor pattern anchored to whole `0.5` kg
-/// no matter how far the ruler has been dragged.
-private struct TickStrip: View, Animatable {
+/// The ticks are drawn outwards from the one nearest the needle, which keeps
+/// the major/minor pattern anchored to whole `0.5` kg no matter how far the
+/// ruler has been dragged. `value` is always a snapped reading, so the tick it
+/// centres on sits exactly under the needle — the detent.
+private struct TickStrip: View {
 
     var value: Double
-
-    var animatableData: Double {
-        get { value }
-        set { value = newValue }
-    }
 
     var body: some View {
         Canvas(rendersAsynchronously: false) { context, size in
