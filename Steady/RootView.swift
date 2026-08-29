@@ -29,6 +29,8 @@ struct RootView: View {
     /// that the most important animation in the app.
     @Namespace private var tabPillNamespace
 
+    @Environment(\.motion) private var motion
+
     var body: some View {
         @Bindable var router = router
 
@@ -36,17 +38,29 @@ struct RootView: View {
             Palette.bg.ignoresSafeArea()
 
             if onboardingComplete {
-                switch router.tab {
-                case .log:
-                    LogView(selectedTab: $router.tab)
-                case .trend:
-                    TrendView(selectedTab: $router.tab)
+                Group {
+                    switch router.tab {
+                    case .log:
+                        LogView(selectedTab: $router.tab)
+                    case .trend:
+                        TrendView(selectedTab: $router.tab)
+                    }
                 }
+                // Design reference §9: changing tab slides in the direction of
+                // travel. The identity has to be the tab itself, or SwiftUI
+                // treats the two screens as one view being reconfigured and
+                // there is nothing to transition between. `.id` on the Group
+                // also means the transition fires from whatever state the tab
+                // was in — the ruler, "Logged for today", Edit today — rather
+                // than only from a particular one.
+                .id(router.tab)
+                .transition(motion.tabChange(forward: router.tab == .trend))
             } else {
                 OnboardingFlowView { onboardingComplete = true }
             }
         }
         .environment(\.tabPillNamespace, tabPillNamespace)
+        .animation(motion.present, value: router.tab)
         .task {
             await store.refresh()
         }

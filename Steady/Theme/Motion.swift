@@ -115,6 +115,21 @@ nonisolated struct SteadyMotion: Equatable, Sendable {
     /// the line simply appears already drawn.
     var drawsPathsIn: Bool { !reduceMotion }
 
+    /// How a tab change moves. Log sits left of Trend, so travelling right
+    /// pushes the outgoing screen out to the leading edge and brings the
+    /// incoming one in from the trailing edge; travelling left reverses it.
+    /// Under Reduce Motion both sides cross-fade in place.
+    ///
+    /// - Parameter forward: whether the destination sits to the right of the
+    ///   screen being left.
+    func tabChange(forward: Bool) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity)
+        )
+    }
+
     /// Whether the segmented pills slide. They cross-fade instead when motion
     /// is reduced.
     var slidesPill: Bool { !reduceMotion }

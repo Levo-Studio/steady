@@ -628,10 +628,27 @@ gains:
 ### Screens and sheets
 
 The delete sheet rises from the bottom edge with `present` while the scrim and blur fade in
-over the same duration. It leaves the same way. Screen swaps inside a tab — entry to
-already-logged, and into Edit today — use an opacity-plus-`4` pt lift with `present`; they
-never slide horizontally, because there is no navigation stack and a horizontal slide would
-imply one.
+over the same duration. It leaves the same way.
+
+**Changing tab slides horizontally, in the direction of travel.** Log sits left of Trend in
+the tab bar, so going to Trend pushes the outgoing screen out to the left and brings the
+incoming one in from the right; going back reverses it. Both screens move together, as one
+strip, so it reads as travelling sideways rather than as two independent fades. Use `present`.
+
+This was previously forbidden here on the grounds that there is no navigation stack. That
+reasoning was wrong: a horizontal slide implies a *stack* only when it is one-directional and
+paired with a back gesture. Two tabs are laid out side by side on screen, and the sliding pill
+already tells the eye they are left and right of each other — moving the content the same way
+is the tab bar's own spatial logic, not a borrowed navigation metaphor. **The transition fires
+on every tab change, from whatever state the tab is in** — the ruler, "Logged for today", Edit
+today — with no exceptions.
+
+**Screen swaps inside a tab** — entry to already-logged, and into Edit today — use an
+opacity-plus-`4` pt lift with `present`. They do not slide, because they are not side by side:
+they are the same place showing a different state.
+
+Under Reduce Motion the tab change cross-fades in place and the lift is dropped, as everywhere
+else.
 
 ### Reduce Motion
 

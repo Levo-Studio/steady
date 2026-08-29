@@ -74,8 +74,9 @@ struct LogView: View {
     @ViewBuilder
     private var content: some View {
         // §9: a screen swap inside a tab is opacity plus a `4` pt lift with
-        // `present`. Never a horizontal slide — there is no navigation stack
-        // here and a slide would imply one.
+        // `present`. It does not slide, because these are not side by side the
+        // way the two tabs are — they are the same place showing a different
+        // state. Changing tab is what slides.
         ZStack {
             if let reading = store.todayReading, isEditing {
                 EditTodayScreen(reading: reading, selectedTab: $selectedTab) {
