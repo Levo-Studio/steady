@@ -15,6 +15,11 @@ nonisolated enum RootTab: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    /// The side of the screen this tab lives on, and therefore the edge it
+    /// slides in from and back out to. Log is left of Trend in the bar, so the
+    /// content travels the same way the pill does.
+    var edge: Edge { self == .log ? .leading : .trailing }
+
     var title: String {
         switch self {
         case .log: "Log"

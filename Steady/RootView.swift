@@ -54,7 +54,7 @@ struct RootView: View {
                 // was in — the ruler, "Logged for today", Edit today — rather
                 // than only from a particular one.
                 .id(router.tab)
-                .transition(motion.tabChange(forward: router.tab == .trend))
+                .transition(motion.tabChange(from: router.tab.edge))
             } else {
                 OnboardingFlowView { onboardingComplete = true }
             }

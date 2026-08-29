@@ -646,9 +646,16 @@ The delete sheet rises from the bottom edge with `present` while the scrim and b
 over the same duration. It leaves the same way.
 
 **Changing tab slides horizontally, in the direction of travel.** Log sits left of Trend in
-the tab bar, so going to Trend pushes the outgoing screen out to the left and brings the
-incoming one in from the right; going back reverses it. Both screens move together, as one
-strip, so it reads as travelling sideways rather than as two independent fades. Use `present`.
+the tab bar, so going to Trend pushes Log out to the left and brings Trend in from the right;
+going back reverses it. Both screens move the same way, as one strip, so it reads as
+travelling sideways rather than as two independent fades. Use `present`.
+
+Implement it by giving **each screen a fixed edge** — Log leading, Trend trailing — that it
+both enters from and leaves by. Do not derive the direction from the destination: a
+transition is resolved per view, and the outgoing screen's was fixed during the render before
+the change, so a destination-based direction hands the departing screen the previous answer
+and the two slide the same way, crossing over each other. The fixed-edge form has no ordering
+problem and needs no state.
 
 This was previously forbidden here on the grounds that there is no navigation stack. That
 reasoning was wrong: a horizontal slide implies a *stack* only when it is one-directional and

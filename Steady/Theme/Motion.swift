@@ -115,19 +115,23 @@ nonisolated struct SteadyMotion: Equatable, Sendable {
     /// the line simply appears already drawn.
     var drawsPathsIn: Bool { !reduceMotion }
 
-    /// How a tab change moves. Log sits left of Trend, so travelling right
-    /// pushes the outgoing screen out to the leading edge and brings the
-    /// incoming one in from the trailing edge; travelling left reverses it.
-    /// Under Reduce Motion both sides cross-fade in place.
+    /// How a tab change moves, given the edge that tab lives on: Log leading,
+    /// Trend trailing. Each screen enters *and* leaves by its own edge, so
+    /// going to Trend takes Log out to the left while Trend arrives from the
+    /// right, and going back reverses it without either of them being told
+    /// which way the journey went.
     ///
-    /// - Parameter forward: whether the destination sits to the right of the
-    ///   screen being left.
-    func tabChange(forward: Bool) -> AnyTransition {
+    /// The direction deliberately is not derived from the destination. A
+    /// transition is resolved per view, and the outgoing screen's was fixed
+    /// during the render before the change — so a destination-based direction
+    /// gives the departing screen the *old* answer and the two slide the same
+    /// way, crossing over each other. Anchoring each screen to a fixed edge has
+    /// no such ordering problem and needs no state.
+    ///
+    /// Under Reduce Motion both sides cross-fade in place.
+    func tabChange(from edge: Edge) -> AnyTransition {
         guard !reduceMotion else { return .opacity }
-        return .asymmetric(
-            insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
-            removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity)
-        )
+        return .move(edge: edge).combined(with: .opacity)
     }
 
     /// Whether the segmented pills slide. They cross-fade instead when motion
