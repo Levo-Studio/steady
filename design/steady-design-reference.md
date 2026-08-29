@@ -486,6 +486,21 @@ redraws the trend. It must never be adjacent to the confirm action.
   - "Delete entry" — height `56`, pill, `dangersoft` fill, `danger` text, 17 pt / 500.
   - "Keep it" — height `56`, pill, no fill, `ink` text, 17 pt / 400.
 
+**Variant: the reading came from another app.** HealthKit only lets an app delete what it
+saved itself, so a smart-scale reading cannot be removed from here. Same sheet, same
+geometry, different content:
+
+- Title: "Another app wrote this".
+- Body: "72.4 kg from Saturday, 29 August was written by another app, so Steady can't remove
+  it. You can delete it in Health."
+- The first button becomes **"Open Health"** — same height and pill, but `acsoft` fill with
+  `acsoftink` text, because handing over is not a destructive act and must not wear the
+  danger colours. "Keep it" is unchanged.
+
+Delete in the §7.6 header stays in `danger` and stays tappable in this case. Disabling it
+would be the obvious move and it is the wrong one: a dead control explains nothing and offers
+nothing, where the sheet can say who owns the reading and send the user somewhere that works.
+
 ### 7.8 Trend
 
 Padding `70 / 24 / 40`.

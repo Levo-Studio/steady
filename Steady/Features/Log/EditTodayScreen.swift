@@ -64,8 +64,10 @@ struct EditTodayScreen: View {
                 DeleteConfirmationSheet(
                     kilograms: reading.kilograms,
                     date: reading.date,
+                    isOwnedBySteady: canDelete,
                     onDelete: delete,
-                    onKeep: { setConfirming(false) }
+                    onKeep: { setConfirming(false) },
+                    onOpenHealth: openHealth
                 )
                 // §7.7, revised: flush. No side inset, no bottom inset — the
                 // sheet spans the full width and its bottom edge is the bottom
@@ -150,17 +152,18 @@ struct EditTodayScreen: View {
             Button { setConfirming(true) } label: {
                 Text("Delete")
                     .steadyTextStyle(.headerDelete)
-                    // A reading Steady did not write cannot be removed, so the
-                    // control drops out of the danger colour entirely rather
-                    // than offering an action that would silently fail.
-                    .foregroundStyle(canDelete ? Palette.danger : Palette.mut)
+                    .foregroundStyle(Palette.danger)
                     .padding(.vertical, LogMetrics.headerTargetInset)
                     .contentShape(.rect)
             }
             .buttonStyle(.pressable)
             .padding(.vertical, -LogMetrics.headerTargetInset)
-            .disabled(!canDelete || isWorking)
-            .accessibilityHint(canDelete ? "" : "This reading was written by another app and cannot be deleted here.")
+            .disabled(isWorking)
+            // Always tappable, including for a reading Steady did not write.
+            // HealthKit will not let an app delete another source's sample, but
+            // a greyed-out control explains nothing and offers nothing — the
+            // sheet says who wrote it and opens Health, which can remove it.
+            .accessibilityHint(canDelete ? "" : "Written by another app. Opens Health, which can remove it.")
         }
         // STEADY.md §11: the 44 pt target is grown on each label above, not
         // with a minHeight here. A minHeight on this stack would expand the
@@ -170,9 +173,8 @@ struct EditTodayScreen: View {
 
     // MARK: - State
 
-    /// Deleting only ever touches a sample Steady wrote. HealthKit refuses
-    /// another source's data, and a Delete that silently fails is worse than
-    /// one that is plainly unavailable.
+    /// Whether Steady wrote this reading, and therefore whether it can delete
+    /// it. HealthKit only lets an app remove what it saved itself.
     private var canDelete: Bool {
         reading.isOwnedBySteady(appBundleIdentifier: Bundle.main.bundleIdentifier)
     }
@@ -208,6 +210,15 @@ struct EditTodayScreen: View {
             isWorking = false
             if saved { onDismiss() }
         }
+    }
+
+    /// Hands the user to Health, the only place a reading Steady did not write
+    /// can be removed. There is no deep link to a single sample, so this opens
+    /// the app itself.
+    private func openHealth() {
+        setConfirming(false)
+        guard let url = URL(string: "x-apple-health://") else { return }
+        UIApplication.shared.open(url)
     }
 
     private func delete() {

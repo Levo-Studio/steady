@@ -266,9 +266,12 @@ of the samples — HealthKit is the database, and the app is a view onto it.
 - Observe changes with `HKObserverQuery` + `HKAnchoredObjectQuery` so a weight logged in
   another app appears without a manual refresh.
 - Writes are attributed to Steady. Deleting only ever deletes samples Steady wrote —
-  never another app's sample. If today's reading came from a smart scale, the Edit screen
-  offers Update (which writes a Steady sample) but **Delete must be disabled**, because the
-  app cannot delete another source's data and silently failing is worse than not offering.
+  HealthKit refuses another app's sample, and that is a platform rule, not a gap to work
+  around. If today's reading came from a smart scale, Update works (it writes a Steady
+  sample) and **Delete stays tappable**: the confirmation sheet switches to "Another app
+  wrote this", names the reading, and offers **Open Health**, which is the one place that
+  can remove it. A greyed-out Delete was the earlier behaviour and it was wrong — it
+  explains nothing and offers nothing, which is worse than either deleting or handing over.
 - Never log, print, or transmit a weight value. Not in `os_log`, not in a debug `print`
   left in a release build. This is health data.
 

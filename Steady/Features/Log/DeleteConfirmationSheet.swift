@@ -24,12 +24,22 @@ struct DeleteConfirmationSheet: View {
 
     let kilograms: Double
     let date: Date
+    /// Whether Steady wrote this reading.
+    ///
+    /// HealthKit only lets an app delete what it saved itself, so a reading
+    /// from a smart scale or another tracker cannot be removed from here. That
+    /// is a platform rule, not a missing feature — but a greyed-out Delete is
+    /// the least useful way to say so, because it explains nothing and offers
+    /// nothing. When this is `false` the sheet says who owns the reading and
+    /// sends the user to the one place that *can* remove it.
+    var isOwnedBySteady = true
     var onDelete: () -> Void
     var onKeep: () -> Void
+    var onOpenHealth: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Delete today’s entry?")
+            Text(isOwnedBySteady ? "Delete today’s entry?" : "Another app wrote this")
                 .steadyTextStyle(.deleteSheetTitle)
                 .foregroundStyle(Palette.ink)
 
@@ -39,13 +49,25 @@ struct DeleteConfirmationSheet: View {
                 .padding(.top, Metrics.space3)
 
             VStack(spacing: Metrics.space2) {
-                sheetButton(
-                    "Delete entry",
-                    style: .sheetButtonDestructive,
-                    foreground: Palette.danger,
-                    background: Palette.dangersoft,
-                    action: onDelete
-                )
+                if isOwnedBySteady {
+                    sheetButton(
+                        "Delete entry",
+                        style: .sheetButtonDestructive,
+                        foreground: Palette.danger,
+                        background: Palette.dangersoft,
+                        action: onDelete
+                    )
+                } else {
+                    // Not destructive, so it does not take the danger colours.
+                    // It hands over rather than removing anything.
+                    sheetButton(
+                        "Open Health",
+                        style: .sheetButtonDestructive,
+                        foreground: Palette.acsoftink,
+                        background: Palette.acsoft,
+                        action: onOpenHealth
+                    )
+                }
                 sheetButton(
                     "Keep it",
                     style: .sheetButtonKeep,
@@ -105,7 +127,11 @@ struct DeleteConfirmationSheet: View {
     /// recalculated."
     private func message(for kilograms: Double, on date: Date) -> String {
         let value = TrendEngine.format(kilograms, decimals: 1)
-        return "\(value) kg from \(LogDateFormat.dayLine(date)) will be removed and the trend recalculated."
+        let day = LogDateFormat.dayLine(date)
+        guard isOwnedBySteady else {
+            return "\(value) kg from \(day) was written by another app, so Steady can’t remove it. You can delete it in Health."
+        }
+        return "\(value) kg from \(day) will be removed and the trend recalculated."
     }
 }
 
