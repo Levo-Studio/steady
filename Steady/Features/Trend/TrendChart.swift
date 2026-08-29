@@ -31,40 +31,34 @@ struct TrendChart: View {
 
     @Environment(\.motion) private var motion
 
-    /// Combines the screen's token with this view's own first appearance, which
-    /// is the other moment §9 asks the line to draw in on.
-    @State private var appearances = 0
-
     var body: some View {
         Group {
             if motion.drawsPathsIn {
                 // §9: the path animates from flat to its shape over 0.45s with
-                // `settle`. `settle`'s response is 0.42, so a spring keyframe
-                // of that duration is the same spring, not a fourth one.
-                KeyframeAnimator(
-                    initialValue: 1.0,
-                    trigger: appearances &+ redrawToken
-                ) { progress in
-                    canvas(progress: progress)
-                } keyframes: { _ in
-                    KeyframeTrack {
-                        MoveKeyframe(0)
-                        SpringKeyframe(
-                            1,
-                            duration: Motion.chartDrawDuration,
-                            spring: Motion.settleSpring
-                        )
-                    }
-                }
+                // `settle`. `settle`'s response is 0.42, so the spring that
+                // carries it is the same spring, not a fourth one.
+                //
+                // The redraw token is the drawing's *identity*, not a trigger.
+                // A `KeyframeAnimator` with a trigger holds its initial value
+                // until the trigger changes, and on first appearance the
+                // chart's insertion and its `onAppear` land in the same update,
+                // so it was created already settled and the line never drew in;
+                // the trigger-less initialiser does run on appear but then
+                // repeats its track for ever, which had the chart re-drawing
+                // itself every 0.45 s. Re-creating the drawing instead gives it
+                // a fresh `progress` of zero each time, and one `onAppear`
+                // animates it home: once when the chart first appears, and again
+                // on every range tap.
+                DrawnChart(series: series, period: period)
+                    .id(redrawToken)
             } else {
                 // Reduce Motion: the line appears at full shape, the dots
                 // without stagger or scale.
-                canvas(progress: 1)
+                TrendChartCanvas(series: series, period: period, progress: 1)
             }
         }
         .frame(height: Metrics.chartHeight + Self.overflow * 2)
         .padding(-Self.overflow)
-        .onAppear { appearances &+= 1 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Trend chart, \(period.title.lowercased())")
         .accessibilityValue(accessibilitySummary)
@@ -79,10 +73,6 @@ struct TrendChart: View {
     /// every side and pulled back with negative padding — the layout still
     /// occupies exactly 306 × 140.
     fileprivate static let overflow: CGFloat = 5
-
-    private func canvas(progress: Double) -> some View {
-        TrendChartCanvas(series: series, period: period, progress: progress)
-    }
 
     /// A run of points as one open path.
     fileprivate static func polyline(_ points: [CGPoint]) -> Path {
@@ -111,6 +101,45 @@ struct TrendChart: View {
 }
 
 // MARK: - The drawing
+
+/// The chart, drawing itself in from flat once per appearance.
+///
+/// The state lives here rather than in `TrendChart` so that re-creating this
+/// view — which is what the redraw token does — restarts the entrance from
+/// zero without anything having to reset it.
+private struct DrawnChart: View {
+
+    let series: TrendEngine.Series
+    let period: Period
+
+    /// Flips once, a render pass after the drawing is on screen, which is what
+    /// starts the entrance.
+    @State private var hasAppeared = false
+
+    var body: some View {
+        // A keyframe track rather than `withAnimation` on an `Animatable` view:
+        // the latter reached its settled shape in two frames on device, because
+        // the canvas is not re-evaluated per frame the way a keyframe animator's
+        // content closure is. Watching it is the only way that shows up.
+        KeyframeAnimator(initialValue: 0.0, trigger: hasAppeared) { progress in
+            TrendChartCanvas(series: series, period: period, progress: progress)
+        } keyframes: { _ in
+            KeyframeTrack {
+                SpringKeyframe(
+                    1,
+                    duration: Motion.chartDrawDuration,
+                    spring: Motion.settleSpring
+                )
+            }
+        }
+        // `.task` rather than `.onAppear`: the trigger has to change in a
+        // *later* render pass than the one that created the animator, or the
+        // animator is born already holding the new value and never runs. The
+        // initial value is the start of the entrance, so the frame or two
+        // before this fires shows a flat line, which is where it begins anyway.
+        .task { hasAppeared = true }
+    }
+}
 
 /// The chart itself, at one point in its entrance.
 ///
