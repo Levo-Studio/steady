@@ -9,6 +9,32 @@
 import Foundation
 import Observation
 
+/// Something the user asked for that Apple Health refused.
+///
+/// Coarse on purpose: the screens have room for one line, and the underlying
+/// error is never shown. Nothing here carries a weight value — health data,
+/// and anything derived from it, never reaches a log or an error string.
+nonisolated enum WeightStoreFailure: Equatable, Sendable {
+    /// The authorisation sheet could not be presented, or was dismissed
+    /// without granting write access.
+    case authorizationFailed
+    /// The reading could not be written. A denied write lands here, which is
+    /// the case that used to fail silently.
+    case saveFailed
+    /// The reading could not be removed. Usually another source owns it.
+    case deleteFailed
+
+    /// What the Log screen puts on screen. Plain and factual, per the
+    /// product's voice.
+    var message: String {
+        switch self {
+        case .authorizationFailed: "Apple Health access could not be granted."
+        case .saveFailed: "Apple Health did not accept the entry."
+        case .deleteFailed: "Apple Health did not remove the entry."
+        }
+    }
+}
+
 /// The app's single source of truth: the readings, the trend derived from them,
 /// and what Apple Health is currently letting us do.
 ///
@@ -29,6 +55,12 @@ final class WeightStore {
     /// True until the first read completes, so the empty state is not shown to
     /// somebody who simply has not been queried yet.
     private(set) var hasLoaded = false
+
+    /// The last command Apple Health refused, for the screen to render.
+    ///
+    /// A save that fails silently is the worst outcome here: the user believes
+    /// the day is logged, the trend does not move, and nothing says why.
+    private(set) var failure: WeightStoreFailure?
 
     private let health: HealthServicing
     private let calendar: Calendar
@@ -94,26 +126,48 @@ final class WeightStore {
     }
 
     func requestAuthorization() async {
-        try? await health.requestAuthorization()
+        failure = nil
+        do {
+            try await health.requestAuthorization()
+        } catch {
+            failure = .authorizationFailed
+        }
         await refresh()
     }
 
-    func save(kilograms: Double, on date: Date = .now) async {
-        try? await health.save(kilograms: kilograms, on: date)
+    /// Writes a reading. Returns whether it landed, so a screen can stay put
+    /// rather than advance on a write that did not happen.
+    @discardableResult
+    func save(kilograms: Double, on date: Date = .now) async -> Bool {
+        failure = nil
+        do {
+            try await health.save(kilograms: kilograms, on: date)
+        } catch {
+            failure = .saveFailed
+            return false
+        }
         await refresh()
+        return true
     }
 
     /// Deletes a reading. Only succeeds for readings Steady wrote — a smart
     /// scale's sample is not ours to remove.
     @discardableResult
     func delete(_ sample: WeightSample) async -> Bool {
+        failure = nil
         do {
             try await health.delete(sample)
             await refresh()
             return true
         } catch {
+            failure = .deleteFailed
             return false
         }
+    }
+
+    /// Dismisses the error the screen is showing.
+    func clearFailure() {
+        failure = nil
     }
 
     /// Keeps the app in step with weights written elsewhere.
