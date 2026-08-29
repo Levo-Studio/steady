@@ -152,3 +152,22 @@ Append-only. One line per state change, so a reconnecting session can see what h
   (STEADY.md §3 requires the observable store, and without it all three Batch B agents
   would each invent one) and a `SteadyTests` target (§12's tests need a home, and Batch B
   is forbidden from touching `project.pbxproj`).
+- Feature 0 reviewed. **Code review: PASS** — it ran `reference-weight.js` under node and
+  confirmed every test constant is genuine JS output to 10+ decimals, not a Swift
+  re-derivation. **Design review: FAIL** on three token-layer items.
+- Blocking findings: (1) `.lineSpacing` is additive in SwiftUI, so every authored
+  line-height was over-set — multi-line styles ~17% loose and the `lineHeight: 1` display
+  numerals got no compensation at all; (2) the sheet shadow used the CSS blur radius 60
+  where SwiftUI wants sigma 30; (3) `AccentColor.colorset` was empty, so the system tint
+  fell back to the semantic blue §10 forbids.
+- Fix agent dispatched with those three plus twelve smaller findings, and rebased onto
+  current `main` first.
+- Spec gap resolved while fixing: if a smart scale wrote at 06:00 and the user logged at
+  20:00, the earliest-sample rule hid the user's own entry. New rule — a sample Steady
+  itself wrote is the day's value; otherwise the earliest sample of the day.
+- Colour question escalated by both reviewers independently and put to the owner. **Settled:
+  follow the design file, which renders OKLCH.** No rework; already implemented. Recorded in
+  the design reference as closed so it is not reopened.
+- Code review finding #1 (the mark should use the logo hex) was rejected after checking the
+  source: the in-app header uses `var(--ac, …)` and so takes the OKLCH accent. Only the
+  exported `branding/` assets are hex. §8 reworded to remove the ambiguity that caused it.
