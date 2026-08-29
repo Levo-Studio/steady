@@ -178,7 +178,15 @@ struct EditTodayScreen: View {
         guard !isWorking else { return }
         isWorking = true
         Task {
-            let saved = await store.save(kilograms: value)
+            // An edit keeps the moment the user actually weighed. Letting the
+            // write default to `.now` would move a 07:14 sample to whenever it
+            // was corrected, and §7.5's "at 07:14" would then print a time the
+            // user never stood on the scale. A reading from another source is
+            // genuinely a new Steady entry, so that one takes the current time.
+            let saved = await store.save(
+                kilograms: value,
+                on: canDelete ? reading.date : .now
+            )
             isWorking = false
             if saved { onDismiss() }
         }
