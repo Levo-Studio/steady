@@ -120,21 +120,21 @@ private extension View {
 // MARK: - Previews
 
 #Preview("Light") {
-    let values = TrendPreviewData.values(days: 120)
-    let trend = TrendEngine.trend(for: values)
+    let readings = TrendPreviewData.samples(days: 120)
+    let trend = TrendEngine.trend(for: readings.map(\.kilograms))
     return VStack(spacing: Metrics.space3) {
         TrendStatsGrid(
-            stats: TrendEngine.stats(for: .week, values: values, trend: trend),
+            stats: TrendEngine.stats(for: .week, readings: readings, trend: trend),
             isEmpty: false,
             onEditToday: {}
         )
         TrendStatsGrid(
-            stats: TrendEngine.stats(for: .month, values: values, trend: trend),
+            stats: TrendEngine.stats(for: .month, readings: readings, trend: trend),
             isEmpty: false,
             onEditToday: {}
         )
         TrendStatsGrid(
-            stats: TrendEngine.stats(for: .week, values: [], trend: []),
+            stats: TrendEngine.stats(for: .week, readings: [], trend: []),
             isEmpty: true,
             onEditToday: {}
         )
@@ -145,16 +145,16 @@ private extension View {
 }
 
 #Preview("Dark") {
-    let values = TrendPreviewData.values(days: 400)
-    let trend = TrendEngine.trend(for: values)
+    let readings = TrendPreviewData.samples(days: 400)
+    let trend = TrendEngine.trend(for: readings.map(\.kilograms))
     return VStack(spacing: Metrics.space3) {
         TrendStatsGrid(
-            stats: TrendEngine.stats(for: .year, values: values, trend: trend),
+            stats: TrendEngine.stats(for: .year, readings: readings, trend: trend),
             isEmpty: false,
             onEditToday: {}
         )
         TrendStatsGrid(
-            stats: TrendEngine.stats(for: .week, values: [], trend: []),
+            stats: TrendEngine.stats(for: .week, readings: [], trend: []),
             isEmpty: true,
             onEditToday: {}
         )

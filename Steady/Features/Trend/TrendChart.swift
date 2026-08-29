@@ -117,16 +117,10 @@ struct TrendChart: View {
             return "No readings yet."
         }
         let unit = period == .year ? "weekly averages" : "readings"
-        let direction: String
-        let change = last - first
-        if abs(change) < 0.05 {
-            direction = "level"
-        } else {
-            direction = change > 0 ? "rising" : "falling"
-        }
+        let direction = TrendEngine.direction(from: first, to: last)
         return """
             \(series.raw.count) \(unit). \
-            Trend \(direction), from \(TrendEngine.format(first, decimals: 1)) \
+            Trend \(direction.spoken), from \(TrendEngine.format(first, decimals: 1)) \
             to \(TrendEngine.format(last, decimals: 1)) kilograms.
             """
     }

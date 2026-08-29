@@ -193,10 +193,33 @@ struct TrendEngineTests {
 
     // MARK: - Stats
 
+    /// One reading per day, ending on `endingOn`, oldest first.
+    private func dailyReadings(
+        _ values: [Double],
+        endingOn end: Date,
+        calendar: Calendar
+    ) -> [WeightSample] {
+        values.enumerated().compactMap { index, value in
+            guard let date = calendar.date(
+                byAdding: .day,
+                value: index - (values.count - 1),
+                to: calendar.startOfDay(for: end)
+            ) else { return nil }
+            return WeightSample(date: date.addingTimeInterval(7 * 3600), kilograms: value)
+        }
+    }
+
     @Test("The four stats match the reference metrics")
     func statsMatchReference() {
         let values = ReferenceSeries.raw
-        let stats = TrendEngine.stats(for: .week, values: values, trend: TrendEngine.trend(for: values))
+        let now = midnightUTC
+        let stats = TrendEngine.stats(
+            for: .week,
+            readings: dailyReadings(values, endingOn: now, calendar: utc),
+            trend: TrendEngine.trend(for: values),
+            now: now,
+            calendar: utc
+        )
         #expect(TrendEngine.format(stats.today, decimals: 1) == "72.9")
         #expect(TrendEngine.format(stats.yesterday, decimals: 1) == "72.8")
         #expect(TrendEngine.format(stats.sevenDayAverage, decimals: 1) == "72.5")
@@ -208,8 +231,15 @@ struct TrendEngineTests {
     func statsPerWeekLabel() {
         let values = ReferenceSeries.raw
         let trend = TrendEngine.trend(for: values)
+        let readings = dailyReadings(values, endingOn: midnightUTC, calendar: utc)
         for period in [Period.month, .year] {
-            let stats = TrendEngine.stats(for: period, values: values, trend: trend)
+            let stats = TrendEngine.stats(
+                for: period,
+                readings: readings,
+                trend: trend,
+                now: midnightUTC,
+                calendar: utc
+            )
             #expect(stats.perWeekLabel == "⌀ per week")
             #expect(stats.perWeekDecimals == 2)
         }
@@ -217,7 +247,9 @@ struct TrendEngineTests {
 
     @Test("Stats are nil rather than zero when there is nothing to average")
     func statsEmpty() {
-        let stats = TrendEngine.stats(for: .week, values: [], trend: [])
+        let stats = TrendEngine.stats(
+            for: .week, readings: [], trend: [], now: midnightUTC, calendar: utc
+        )
         #expect(stats.today == nil)
         #expect(stats.yesterday == nil)
         #expect(stats.sevenDayAverage == nil)
@@ -226,8 +258,80 @@ struct TrendEngineTests {
 
     @Test("The seven-day average uses only the readings that exist")
     func statsSevenDayAverageWithFewerReadings() {
-        let stats = TrendEngine.stats(for: .week, values: [70, 72], trend: TrendEngine.trend(for: [70, 72]))
+        let stats = TrendEngine.stats(
+            for: .week,
+            readings: dailyReadings([70, 72], endingOn: midnightUTC, calendar: utc),
+            trend: TrendEngine.trend(for: [70, 72]),
+            now: midnightUTC,
+            calendar: utc
+        )
         #expect(abs(stats.sevenDayAverage! - 71) < 1e-12)
+    }
+
+    @Test("Today is empty when today was skipped, and does not borrow an older day")
+    func statsTodaySkipped() {
+        // Readings for the day before yesterday and yesterday only.
+        let readings = dailyReadings(
+            [71.0, 72.0],
+            endingOn: utc.date(byAdding: .day, value: -1, to: midnightUTC)!,
+            calendar: utc
+        )
+        let stats = TrendEngine.stats(
+            for: .week,
+            readings: readings,
+            trend: TrendEngine.trend(for: [71.0, 72.0]),
+            now: midnightUTC,
+            calendar: utc
+        )
+        #expect(stats.today == nil)
+        #expect(TrendEngine.format(stats.today, decimals: 1) == "—")
+        #expect(stats.yesterday == 72.0)
+    }
+
+    @Test("Yesterday is empty when yesterday was skipped but today was not")
+    func statsYesterdaySkipped() {
+        let today = WeightSample(
+            date: midnightUTC.addingTimeInterval(7 * 3600), kilograms: 73.0
+        )
+        let older = WeightSample(
+            date: utc.date(byAdding: .day, value: -4, to: midnightUTC)!, kilograms: 70.0
+        )
+        let stats = TrendEngine.stats(
+            for: .week,
+            readings: [older, today],
+            trend: TrendEngine.trend(for: [70.0, 73.0]),
+            now: midnightUTC,
+            calendar: utc
+        )
+        #expect(stats.today == 73.0)
+        #expect(stats.yesterday == nil)
+    }
+
+    @Test("A reading later on the same day still counts as today")
+    func statsTodayLateInTheDay() {
+        let readings = dailyReadings([72.0], endingOn: midnightUTC, calendar: utc)
+        let stats = TrendEngine.stats(
+            for: .week,
+            readings: readings,
+            trend: TrendEngine.trend(for: [72.0]),
+            now: midnightUTC.addingTimeInterval(23 * 3600),
+            calendar: utc
+        )
+        #expect(stats.today == 72.0)
+    }
+
+    // MARK: - Direction
+
+    @Test("A change smaller than a tenth of a kilogram is level, not a direction")
+    func directionLevel() {
+        #expect(TrendEngine.direction(from: 72.0, to: 72.04) == .level)
+        #expect(TrendEngine.direction(from: 72.0, to: 71.96) == .level)
+        // Not exactly 72.05: the subtraction lands a hair under the threshold
+        // in binary floating point, which is the boundary itself, not a case
+        // worth pinning a test to.
+        #expect(TrendEngine.direction(from: 72.0, to: 72.06) == .rising)
+        #expect(TrendEngine.direction(from: 72.0, to: 71.94) == .falling)
+        #expect(TrendEngine.direction(from: 72.0, to: 72.0).spoken == "level")
     }
 
     // MARK: - Missing days

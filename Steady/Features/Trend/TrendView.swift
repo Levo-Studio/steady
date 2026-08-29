@@ -28,7 +28,11 @@ struct TrendView: View {
             chartCard
 
             TrendStatsGrid(
-                stats: store.stats(for: period),
+                stats: TrendEngine.stats(
+                    for: period,
+                    readings: store.readings,
+                    trend: store.trend
+                ),
                 isEmpty: isEmpty,
                 onEditToday: editToday
             )
