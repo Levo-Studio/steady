@@ -19,7 +19,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | — | `feat/trend-screen` | blocked on 0 |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
-| 6 | README + logo header | — | `../steady-worktrees/readme` | `docs/readme` | in progress |
+| 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
 
 Legend: `not started` → `in progress` → `in review` → `reviews passed` → `merged`
 
@@ -136,3 +136,6 @@ Append-only. One line per state change, so a reconnecting session can see what h
 - Worktrees created: `feat/foundation`, `docs/readme`. Both agents launched.
 - Note: the existing brand mark in `branding/` is used for the README header; no new
   logo is generated (owner instruction).
+- Feature 6 (README) merged to `main` and pushed. Worktree removed, branch deleted.
+  Reviewed by hand rather than by the two-agent gate: it ships no code and no screens,
+  so neither the code nor the design review has anything to check.
