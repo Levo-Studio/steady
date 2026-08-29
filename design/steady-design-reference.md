@@ -24,6 +24,15 @@ logical size). All pt values below are literal at that width.
 | Onboarding screen padding | `80` top, `24` sides, `40` bottom |
 | Chart drawing width | `306` (= 354 − 24 − 24 card padding) |
 
+**The padding is measured from the physical top of the screen, not from the safe area.**
+The concept's 874 pt canvas is the whole device frame and includes the status-bar region,
+so `70` means 70 pt from the very top — roughly 11 pt below the status bar on a modern
+iPhone, which is what puts the date line where it sits in the concept. A screen that ignores
+this and pads 70 pt *inside* the safe area lands its content about 59 pt too low, and every
+vertical relationship below it shifts with it. Ignore the top safe area and pad from the
+true edge. The bottom `40` is measured from the physical bottom in the same way, and must
+still clear the home indicator.
+
 Layouts are vertical flex columns. `margin-top: auto` appears repeatedly in the source
 — in SwiftUI that is a `Spacer()`. Where two `auto` margins appear in one column, the
 free space is split evenly between them, which is what centres the entry block on the
