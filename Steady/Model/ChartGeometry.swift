@@ -84,38 +84,14 @@ struct ChartGeometry: Equatable, Sendable {
         )
     }
 
+    /// Whether there are enough points to draw a line at all. A range with
+    /// fewer than two readings draws its dots and no line.
+    var drawsLine: Bool { trendPoints.count >= 2 }
+
     /// Where an arbitrary value sits on this chart's scale.
     func y(of value: Double) -> CGFloat {
         guard maxValue > minValue else { return height / 2 }
         return Self.round1(height - CGFloat((value - minValue) / (maxValue - minValue)) * height)
-    }
-
-    /// The trend polyline, or `nil` when there are fewer than two points —
-    /// a range with one reading draws its dot and no line.
-    var trendPath: Path? {
-        guard trendPoints.count >= 2 else { return nil }
-        var path = Path()
-        path.addLines(trendPoints)
-        return path
-    }
-
-    /// The thin polyline through the raw readings.
-    var rawPath: Path? {
-        guard dots.count >= 2 else { return nil }
-        var path = Path()
-        path.addLines(dots)
-        return path
-    }
-
-    /// The trend path closed down to the baseline, for the `glow` fill.
-    var trendAreaPath: Path? {
-        guard trendPoints.count >= 2 else { return nil }
-        var path = Path()
-        path.addLines(trendPoints)
-        path.addLine(to: CGPoint(x: width, y: height))
-        path.addLine(to: CGPoint(x: 0, y: height))
-        path.closeSubpath()
-        return path
     }
 
     /// The reference rounds every coordinate to one decimal before it reaches
