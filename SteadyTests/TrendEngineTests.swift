@@ -373,4 +373,51 @@ struct TrendEngineTests {
         // A value that genuinely rounds to a negative still shows its sign.
         #expect(TrendEngine.format(-0.06, decimals: 1, signed: true) == "-0.1")
     }
+
+    // MARK: - Deliberate divergences from reference-weight.js
+
+    @Test("A month mean divides by the readings in the window, not the nominal 30")
+    func monthMeanDividesByTheRealWindow() {
+        // Ten days of history on a thirty-day range. The JS reference divides
+        // the summed trend by the nominal span, which reports a mean of about
+        // a third of the real weight. Swift divides by what is actually there.
+        let values = Array(repeating: 72.0, count: 10)
+        let trend = TrendEngine.trend(for: values)
+        let summary = TrendEngine.summary(for: .month, trend: trend)
+        #expect(summary.headline == "72.0")
+
+        let nominal = trend.reduce(0, +) / Double(Period.month.spanInDays)
+        #expect(abs(nominal - 24.0) < 0.001)
+        #expect(TrendEngine.format(nominal, decimals: 1) != summary.headline)
+    }
+
+    @Test("A year mean divides by the readings in the window, not the nominal 364")
+    func yearMeanDividesByTheRealWindow() {
+        let values = Array(repeating: 72.0, count: 40)
+        let trend = TrendEngine.trend(for: values)
+        #expect(TrendEngine.summary(for: .year, trend: trend).headline == "72.0")
+    }
+
+    @Test("A partial weekly bucket divides by its own count, not by seven")
+    func partialWeeklyBucketDividesByItsOwnCount() {
+        // Nine days: a full week, then a two-day remainder. The remainder's
+        // mean is the mean of those two days — dividing by seven would drag
+        // the last point of the year chart towards zero and bend the line.
+        let values = Array(repeating: 70.0, count: 7) + [80.0, 80.0]
+        let means = TrendEngine.weeklyMeans(values)
+        #expect(means.count == 2)
+        #expect(abs(means[0] - 70.0) < 1e-12)
+        #expect(abs(means[1] - 80.0) < 1e-12)
+        // Dividing the remainder by seven would have given this instead.
+        #expect(abs(means[1] - 160.0 / 7) > 1)
+    }
+
+    @Test("A full year of history buckets exactly as the reference does")
+    func fullYearMatchesTheReferenceBucketing() {
+        let values = (0..<364).map { 70.0 + Double($0 % 7) }
+        let means = TrendEngine.weeklyMeans(values)
+        #expect(means.count == 52)
+        // Every bucket is a whole week, so every mean is the mean of 70…76.
+        #expect(means.allSatisfy { abs($0 - 73.0) < 1e-12 })
+    }
 }
