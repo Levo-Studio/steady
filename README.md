@@ -6,235 +6,224 @@
 </p>
 
 <p align="center">
-  Gewichtstrend statt Tageszahl · SwiftUI · iOS 26
+  The trend, not the number on the scale · SwiftUI · iOS 26
 </p>
 
 <p align="center">
-  <a href="docs/Steady%20-%20Case%20Studie%20Notes.md"><b>Fallstudie</b></a> ·
-  <a href="#die-rechnung">Die Rechnung</a> ·
-  <a href="#das-lineal">Das Lineal</a> ·
-  <a href="#gesundheitsdaten">Gesundheitsdaten</a> ·
-  <a href="#gestaltung">Gestaltung</a> ·
-  <a href="#bauen">Bauen</a>
+  <a href="docs/Steady%20-%20Case%20Studie%20Notes.md"><b>Case study</b></a> ·
+  <a href="#the-maths">The maths</a> ·
+  <a href="#the-ruler">The ruler</a> ·
+  <a href="#health-data">Health data</a> ·
+  <a href="#design">Design</a> ·
+  <a href="#build">Build</a>
 </p>
 
 ---
 
-Eine Waage-App, die die Zahl auf der Waage nicht für das Ergebnis hält — und die
-keinen Account will, nur um jeden Morgen vier Ziffern zu speichern.
+A weight app that doesn't treat the number on the scale as the result — and that
+doesn't want an account just to store four digits every morning.
 
-Das Körpergewicht schwankt an einem einzigen Tag um rund zwei Kilo: Salz,
-Kohlenhydrate, Wasser, Darminhalt. Wer tatsächlich abnimmt, verliert dabei etwa
-400 Gramm Fett pro Woche. Das Signal ist also rund fünfmal kleiner als das
-Rauschen, das darauf sitzt. Jede andere App zeichnet das Rauschen und überlässt
-das Filtern dem Nutzer — man hat alles richtig gemacht, die Zahl ist trotzdem
-gestiegen, und man muss sich das selbst ausreden. Genau da entsteht die
-Entmutigung.
+Body weight moves about two kilos in a single day on salt, carbohydrate, water and
+gut contents. Someone actually losing fat is losing around 400 grams a week. The
+signal is roughly five times smaller than the noise sitting on top of it. Every
+other app draws the noise and leaves the filtering to you — you did everything
+right, the number went up anyway, and you have to talk yourself out of it. That is
+where the discouragement comes from.
 
-Steady filtert. Man zieht ein Lineal auf sein Gewicht, es landet in Apple Health,
-und zu sehen ist eine geglättete Linie. Zwei Bildschirme, **Log** und **Trend**.
-Keine Einstellungen, keine Verlaufsliste, kein Konto, keine Serie, die man
-verteidigen muss. Wiegen dauert vier Sekunden; die App soll auch vier Sekunden
-dauern.
+Steady does the filtering. You drag a ruler to your weight, it goes into Apple
+Health, and what you see is one smoothed line. Two screens, **Log** and **Trend**.
+No settings, no history list, no account, no streak to defend. Weighing yourself
+takes four seconds; the app should take four seconds too.
 
 |  |  |
 |---|---|
-| **Trend** | EWMA mit α = 0,18 — Halbwertszeit 3,5 Tage, Schwerpunkt 4,6 Tage |
-| **Eingabe** | Ziehbares Lineal, 0,1 kg je Rasterschritt, ein Haptik-Tick pro Schritt |
-| **Speicher** | Ausschliesslich HealthKit — kein Backend, kein Konto, kein Netzwerkcode |
-| **Bildschirme** | Zwei, dazu neun Zustände. Kein Einstellungsbildschirm |
-| **Abhängigkeiten** | Keine. Kein SPM-Paket, kein CocoaPods |
-| **Lizenz** | Source-available — eigener Gebrauch ja, Weiterverkauf nein |
+| **Trend** | EWMA, α = 0.18 — half-life 3.5 days, centre of mass 4.6 days |
+| **Input** | A ruler you drag. 0.1 kg per tick, one haptic tick per step |
+| **Storage** | HealthKit only — no backend, no account, no network code |
+| **Screens** | Two, across nine states. No settings screen |
+| **Dependencies** | None. No SPM package, no CocoaPods |
+| **Licence** | Source-available — your own use yes, resale no |
 
-Warum die App so aussieht, wie sie aussieht — das Lineal statt eines Ziffernblocks,
-warum der Trend die 64-pt-Zahl bekommt und das heutige Gewicht nicht, warum es
-genau eine Akzentfarbe gibt und kein Grün für Abnahme — steht in der
-**[Fallstudie](docs/Steady%20-%20Case%20Studie%20Notes.md)**.
+Why it looks the way it does — the ruler instead of a keypad, why the trend gets the
+64 pt numeral and today's weight doesn't, why there is exactly one accent colour and
+no green for a loss — is written up in the
+**[case study](docs/Steady%20-%20Case%20Studie%20Notes.md)**.
 
-## Die Rechnung
+## The maths
 
-### Warum kein gleitender Durchschnitt
+### Why not a rolling average
 
-Der naheliegende Weg wäre ein 7-Tage-Mittel. Er ist aus zwei konkreten Gründen
-schlechter.
+The obvious approach is a 7-day mean. It is worse in two concrete ways.
 
-Er **gewichtet einen Messwert von vor sechs Tagen genauso stark wie den von heute
-Morgen**. Eine echte Richtungsänderung wird deshalb erst sichtbar, wenn sie das
-Fenster halb gefüllt hat — bei einem Menschen, der etwas verändert hat, fühlt sich
-das an, als sei die App kaputt.
+It **weights a reading from six days ago exactly as heavily as this morning's**. A
+real change of direction only becomes visible once it has half-filled the window,
+which to someone who has genuinely changed something feels like a broken app.
 
-Und er **springt**. In dem Moment, in dem ein Ausreisser hinten aus dem Fenster
-fällt, hüpft der Durchschnitt. In der Linie steht dann ein sichtbarer Knick, dem
-im Leben des Nutzers nichts entspricht.
+And it **steps**. The moment an outlier falls out of the back of the window, the
+average jumps. The line gets a visible kink corresponding to nothing that happened
+to the person.
 
-### EWMA, α = 0,18
+### EWMA, α = 0.18
 
-Ein exponentiell gewichteter gleitender Durchschnitt hat beide Probleme nicht.
-Jeder neue Messwert schiebt die Linie um einen festen Anteil — sie ist stetig,
-und ihre Reaktion ist glatt.
+An exponentially weighted moving average has neither problem. Every new reading
+nudges the line by a fixed fraction, so it is continuous and its response is smooth.
 
 ```
 e[0] = v[0]
-e[i] = 0,18 · v[i] + 0,82 · e[i−1]
+e[i] = 0.18 · v[i] + 0.82 · e[i−1]
 ```
 
-α = 0,18 legt den Charakter der Linie fest:
+That α sets the character of the line:
 
-- **Halbwertszeit ln(0,5) / ln(0,82) ≈ 3,5 Tage.** Eine echte Gewichtsänderung ist
-  nach dreieinhalb Tagen zur Hälfte aufgenommen und nach zwei Wochen praktisch
-  vollständig.
-- **Schwerpunkt (1 − α) / α ≈ 4,6 Tage.** Das Gedächtnis der Linie reicht etwa
-  fünf Tage zurück, gewichtet zum Jüngeren hin.
-- Eine einmalige Salzspitze von 1,5 kg verschiebt die Linie um 0,18 · 1,5 =
-  **0,27 kg** und klingt von dort ab. Der Messwert steht als Punkt weit neben der
-  Linie, die Linie nimmt kaum Notiz.
+- **Half-life `ln(0.5) / ln(0.82) ≈ 3.5 days`.** A genuine change is half absorbed
+  after three and a half days and essentially complete inside two weeks.
+- **Centre of mass `(1 − α) / α ≈ 4.6 days`.** The line's memory runs about five
+  days back, weighted toward the recent end.
+- A one-off 1.5 kg salt spike moves the line by 0.18 · 1.5 = **0.27 kg** and decays
+  from there. The reading shows up as a dot far off the line; the line barely
+  notices. That is the whole product in one number.
 
-Kleineres α (0,10) ergibt eine wunderschön ruhige Linie, die einen echten
-Durchbruch aber über eine Woche zu spät zeigt. Grösseres α (0,30) folgt so eng,
-dass die Linie genau das Rauschen erbt, dessentwegen es sie gibt. 0,18 ist der
-Wert, gegen den der freigegebene Entwurf gezeichnet wurde.
+Lower α (0.10) gives a beautifully calm line that reports a real breakthrough over a
+week late. Higher α (0.30) tracks so closely that the line inherits the noise it
+exists to remove. 0.18 is the value the approved design was drawn against.
 
-Der EWMA läuft **einmal über die gesamte Historie**, von alt nach neu. Die Bereiche
-werden hinten abgeschnitten, nicht je Bereich neu gerechnet — ein Tag zeigt im
-Monatschart denselben Trendwert wie im Jahreschart.
+The EWMA runs **once over the entire history**, oldest to newest. Ranges are sliced
+off the end rather than recomputed per range, so a given day shows the same trend
+value on the month chart and the year chart.
 
-### Zwei Ausnahmen, beide Absicht
+### Two exceptions, both deliberate
 
-| Bereich | Punkte | Linie |
+| Range | Points | Line |
 |---|---|---|
-| Woche | letzte 7 Tageswerte | **Ausgleichsgerade** durch die sieben Messwerte |
-| Monat | letzte 30 Tageswerte | die EWMA-Reihe |
-| Jahr | 52 Wochenmittel | diese Mittel durch einen **zweiten EWMA, α = 0,3** |
+| Week | last 7 daily readings | **least-squares straight-line fit** through the seven |
+| Month | last 30 daily readings | the EWMA series |
+| Year | 52 weekly means | those means through a **second EWMA, α = 0.3** |
 
-Beides korrigiert, was ein EWMA an den Enden der Fensterlänge tut. Über sieben
-Punkte trägt er noch fast das gesamte Rauschen — ein Wochenchart zeigte zwei
-zappelige Linien und sagte nichts. Die Gerade gibt der Woche das Einzige, was sich
-über sieben Tage seriös sagen lässt: die Richtung. Über ein Jahr ist es umgekehrt.
-Wochenmittel sind bereits so glatt, dass der EWMA jedem einzelnen folgte; der
-zweite Durchgang hält die Linie ruhiger als die Punkte, durch die sie gezeichnet
-ist.
+Both correct what an EWMA does at the extremes of window length. Over seven points
+it still carries most of the raw wobble, so a week chart would be two jittery lines
+saying nothing; the straight fit gives the week the only thing worth claiming over
+seven days, which is direction. Over a year it is the opposite problem — weekly
+means are already so smooth that a single pass traced every one of them, so the
+second pass keeps the line calmer than the dots it runs through.
 
-**Fehlende Tage werden nicht interpoliert.** Der EWMA läuft über die Messwerte, die
-es gibt, in Datumsreihenfolge. Eine Lücke lässt die Linie in Kalendertagen
-langsamer reagieren — das ist ehrlich. Ein Halbjahr ohne Messung ist kein Tag mit
-null Kilo.
+**Missing days are not interpolated.** The EWMA runs over the readings that exist,
+in date order. A gap makes the line slower to react in calendar terms, which is
+honest. A day without a reading is not a day at zero kilos.
 
-Referenzimplementierung: [`design/reference-weight.js`](design/reference-weight.js).
-Der Swift-Port muss sie exakt reproduzieren.
+Reference implementation: [`design/reference-weight.js`](design/reference-weight.js).
+The Swift port reproduces it exactly, and the tests assert against values taken from
+actually running the JavaScript rather than against whatever Swift happens to
+produce.
 
-## Das Lineal
+## The ruler
 
-Die einzige Eingabe. **Kein Ziffernblock, kein Picker-Rad, kein Textfeld.**
+The only input. **No keypad, no picker wheel, no text field.**
 
-Gewogen wird halb wach, einhändig, vor dem ersten Kaffee. Vier Zeichen zu tippen
-heisst, sie anschliessend zurückzulesen, um sie zu prüfen. Ein Zug landet mit einer
-Geste auf der richtigen Zahl und braucht keinen Kontrollblick. Der Preis: ein
-Sprung über mehrere Kilo dauert länger — was bei jemandem, der sich täglich wiegt,
-praktisch nie vorkommt.
+Weighing happens half awake, one-handed, before coffee. Typing four characters means
+reading them back to check them. One drag lands on the right number with a single
+gesture and needs no verification. The price is that a jump of several kilos takes
+longer — which for someone weighing daily essentially never happens.
 
-Die Geometrie kommt aus dem Entwurf und ist nicht verhandelbar: **25 Striche** im
-Abstand von **14,2 pt**, jeder fünfte lang. Die Nadel steht fest in der Mitte, das
-Band zieht darunter durch. Das sichtbare Fenster ist 2,4 kg breit und überspannt 24
-Intervalle — daraus folgt die einzige Konstante, die das Steuerelement braucht:
+The geometry comes from the design and is not negotiable: **25 ticks** at **14.2 pt**
+spacing, every fifth one long. The needle is fixed in the centre and the strip
+travels underneath it. The visible window is 2.4 kg across 24 intervals, which gives
+the only constant the control needs:
 
 ```
-14,2 pt = 0,1 kg
+14.2 pt = 0.1 kg
 ```
 
-Der Wert rastet immer auf 0,1 kg. Er wird nie feiner gehalten, angezeigt oder
-gespeichert. **Pro überfahrenem Rasterschritt feuert genau ein Haptik-Tick** —
-vorbereitet beim Start der Geste, ausgelöst beim Überschreiten, nie mehrmals für
-denselben Strich und niemals je Frame. Das ist das Detail, das aus einem Slider ein
-Instrument macht; ein Zug, der durchgehend vibriert, und einer, der gar nicht
-vibriert, wirken gleichermassen kaputt.
+The value always snaps to 0.1 kg. It is never held, shown, or stored at finer
+resolution. **Exactly one haptic tick fires per 0.1 kg crossed** — the generator is
+prepared when the gesture starts, fired on the crossing, never twice for the same
+tick and never per frame. That is the detail that turns a slider into an instrument;
+a drag that buzzes continuously and one that never buzzes at all read as equally
+broken.
 
-Die Knöpfe **−** und **+** daneben schrittweise 0,1 kg, zum Nachjustieren nach dem
-Zug. Startwert ist der gestrige Messwert.
+The **−** and **+** buttons beside it step 0.1 kg for fine-tuning after the drag.
+The opening value is yesterday's reading.
 
-## Gesundheitsdaten
+## Health data
 
-HealthKit **ist** die Datenbank. Kein lokaler Cache, kein Core Data, keine Kopie in
-`UserDefaults`. Kein Backend, kein Konto, keine Analytik, kein Crash-Reporting und
-kein Netzwerkcode — die App funktioniert dauerhaft im Flugmodus. Gelesen und
-geschrieben wird `bodyMass` in Kilogramm, sonst nichts.
+HealthKit **is** the database. No local cache, no Core Data, no copy in
+`UserDefaults`. No backend, no account, no analytics, no crash reporting and no
+network code — the app works in airplane mode, permanently. It reads and writes
+`bodyMass` in kilograms and nothing else.
 
-Drei Dinge, an denen man sich verletzt:
+Three things that bite:
 
-**HealthKit sagt bei Lesezugriffen nicht die Wahrheit.** `authorizationStatus`
-liefert für einen Lesetyp `.sharingAuthorized`, auch wenn der Nutzer das Lesen
-abgelehnt hat — mit Absicht, damit Apps eine Ablehnung nicht erkennen können. Wer
-darauf verzweigt, zeigt jemandem mit zehn Jahren Messwerten ein leeres Diagramm.
-Der Zustand „kein Zugriff" wird deshalb nicht abgefragt, sondern aus einer leeren
-Abfrage bei gleichzeitig fehlender Schreibfreigabe erschlossen.
+**HealthKit does not tell the truth about read access.** `authorizationStatus`
+returns `.sharingAuthorized` for a read type even when the user denied reading — by
+design, so apps cannot detect a refusal. Branch on it and you show an empty chart to
+someone with ten years of data. The access-off state is therefore inferred from an
+empty query combined with missing write authorisation, never queried directly.
 
-**Ein Tag ist ein Wert**, und zwar der früheste Messwert des Kalendertags. Es geht
-um das Morgengewicht unter gleichen Bedingungen. Wer ein zweites Mal loggt,
-ersetzt — es entsteht kein zweiter Eintrag.
+**One day is one value**, the earliest sample of that calendar day, because the
+product is about morning weight under consistent conditions. Logging again replaces
+it rather than appending a second entry.
 
-**Gelöscht wird nur, was Steady selbst geschrieben hat.** Kommt der heutige Wert von
-einer Funkwaage, funktioniert *Aktualisieren*, *Löschen* ist deaktiviert. Ein
-Knopf, der still fehlschlägt, ist schlimmer als ein Knopf, den es nicht gibt.
+**Deletes only ever touch samples Steady itself wrote.** If today's reading came
+from a smart scale, *Update* works and *Delete* is disabled. A button that silently
+fails is worse than a button that isn't there.
 
-Ein App Intent bringt Shortcut, Home-Bildschirm, Sperrbildschirm und Actionbutton
-direkt auf den Log-Bildschirm, Lineal bereit. Eine parametrisierte Variante
-schreibt einen Wert, ohne die Oberfläche überhaupt zu öffnen.
+An App Intent puts a Shortcut, Home Screen tile, Lock Screen button or the Action
+Button straight onto the Log screen with the ruler ready. A parameterised variant
+writes a reading without opening the UI at all.
 
-Ein Gewicht wird **nie** protokolliert — nicht in `os_log`, nicht in einem
-vergessenen `print`. Das sind Gesundheitsdaten.
+A weight is **never** logged — not in `os_log`, not in a forgotten `print`. This is
+health data.
 
-## Gestaltung
+## Design
 
-Massgeblich ist [`design/steady-design-reference.md`](design/steady-design-reference.md).
-Jede Zahl darin ist wörtlich gemeint. Sie stammt aus dem freigegebenen Entwurf,
-nicht aus einer Interpretation davon.
+[`design/steady-design-reference.md`](design/steady-design-reference.md) is ground
+truth. Every number in it is literal. It was extracted from the approved concept
+rather than interpreted from it.
 
-Ein Abstandsraster, Basis 14, jeder Schritt ×1,68: **5 · 8 · 14 · 24 · 40 · 67**.
-Radien 28, 24 und Pille. Helvetica Neue in genau zwei Schnitten, Tracking negativ
-und mit der Grösse wachsend. Jede Ziffer, die sich zur Laufzeit ändert, steht in
-Tabellenziffern — ohne das zappelt das Layout beim Zählen, und das ist die
-sichtbarste Art, diesen Entwurf falsch zu bauen.
+One spacing scale, base 14, each step ×1.68: **5 · 8 · 14 · 24 · 40 · 67**. Radii 28,
+24 and pill. Helvetica Neue in exactly two weights, tracking negative and tightening
+as the type grows. Every numeral that changes at runtime is set in tabular figures —
+without that the layout jitters as digits change, which is the most visible way to
+get this design wrong.
 
-**Eine Akzentfarbe.** Blau heisst „bedienbar" oder „das ist der Trend". Kein Grün
-für Abnahme, kein Rot für Zunahme. Gewicht farbig zu codieren macht aus einer
-Messung ein Urteil, und nach oben ist kein Versagen, wenn man für Kraftaufbau die
-Makros anpasst.
+**One accent colour.** Blue means "interactive" or "this is the trend". No green for
+a loss, no red for a gain. Colour-coding weight turns a measurement into a verdict,
+and up is not failure when you are adjusting macros for training.
 
-Die Akzente sind in **OKLCH** gesetzt, nicht in Hex, damit hell und dunkel
-wahrnehmungsgleich bleiben. Und die Textfarbe auf dem Akzent ist im Dunkelmodus
-**nicht** Weiss, sondern das fast schwarze `#0a1015` — der dunkle Akzent ist ein
-helles Blau. Hell und Dunkel folgen ausschliesslich dem System. Es gibt keinen
-Umschalter, weil es keine Einstellungen gibt.
+The accents are authored in **OKLCH**, not hex, so light and dark stay perceptually
+matched — and light-mode accent falls outside sRGB, so the palette is built in
+Display P3. The label colour on the accent is **not** white in dark mode but the
+near-black `#0a1015`, because the dark accent is a light blue. Light and dark follow
+the system and nothing else. There is no toggle, because there are no settings.
 
-## Architektur
+## Architecture
 
 ```
 Steady/
-  Theme/         Palette, Typografie, Masse — die einzige Quelle für Farbe und Abstand
-  Model/         TrendEngine, ChartGeometry — reine Werte, kein UI, kein HealthKit
-  Health/        HealthService — die einzige Datei, die HealthKit importiert
-  Features/      ein Ordner je Bildschirm, dazu Shared
-  Intents/       App Intents für Shortcuts
-design/          Entwurfsreferenz und Referenzimplementierung der Rechnung
+  Theme/         palette, typography, metrics — the only source of colour and spacing
+  Model/         TrendEngine, ChartGeometry — pure values, no UI, no HealthKit
+  Health/        HealthService — the only file that imports HealthKit
+  Features/      one folder per screen, plus Shared
+  Intents/       App Intents for Shortcuts
+design/          the design reference and the reference implementation of the maths
 ```
 
-**Der Rechenkern kennt keine Datenbank.** `TrendEngine` und `ChartGeometry`
-arbeiten auf reinen Werten. Deshalb lässt sich der EWMA gegen von Hand gerechnete
-Zahlen testen — ohne Simulator, ohne Gesundheitsdatenbank, in Millisekunden.
+**The calculation core knows nothing about a database.** `TrendEngine` and
+`ChartGeometry` work on pure values, so the EWMA can be tested against hand-computed
+numbers without a simulator, without a health database, in milliseconds.
 
-**Keine Ansicht importiert HealthKit.** Alles läuft über `HealthService` hinter
-einem Protokoll, damit der Speicher im Test ersetzbar ist.
+**No view imports HealthKit.** Everything goes through `HealthService` behind a
+protocol, so the store is replaceable in tests.
 
-**Die Diagramme sind von Hand gezeichnet**, mit `Canvas` und `Path` statt Swift
-Charts. Der Entwurf schreibt Strichstärken, Zeichenreihenfolge und je Bereich
-unterschiedliche Punktradien vor. Von Hand gezeichnete Geometrie ist
-deterministisch und überlebt das nächste OS-Update.
+**The charts are drawn by hand**, with `Canvas` and `Path` rather than Swift Charts.
+The design specifies stroke widths, z-order and per-range dot radii; hand-drawn
+geometry is deterministic and survives the next OS update.
 
-## Bauen
+## Build
 
-Vorausgesetzt ist Xcode 26. `xcode-select` zeigt auf vielen Rechnern auf die
-CommandLineTools — die können kein iOS-Projekt bauen. Entweder dauerhaft umstellen
-(`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`) oder je Aufruf
-voranstellen:
+Xcode 26 is required. On many machines `xcode-select` points at the CommandLineTools,
+which cannot build an iOS project. Either switch it permanently
+(`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`) or prefix each
+invocation:
 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
@@ -242,32 +231,29 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
-HealthKit braucht etwas zum Lesen — ein echtes Gerät oder einen Simulator, in den
-man Gewichtsdaten eingetragen hat. Beim ersten Start fragt die App Lese- und
-Schreibzugriff auf `bodyMass` an; ohne sie erscheint der Zustand „kein Zugriff"
-statt eines Diagramms.
+HealthKit needs something to read from — a real device, or a simulator you have
+seeded with weight data. On first launch the app asks for read and write access to
+`bodyMass`; without it you get the access-off state instead of a chart.
 
-Das Projekt nutzt synchronisierte Ordner — neue Dateien unter `Steady/` landen ohne
-Zutun im Target. **`project.pbxproj` wird nicht von Hand um Quelldateien
-ergänzt.**
+The project uses synchronized folders, so new files under `Steady/` land in the
+target on their own. **`project.pbxproj` is not hand-edited to add source files.**
 
 ## Credits
 
-**Creator und Maintainer**
+**Creator and maintainer**
 
-[**Julius Grimm**](https://github.com/justthatrandomcoder) — Idee, Design,
-Rechenkern, App Store. [Levo Studio](https://levo-studio.com)
+[**Julius Grimm**](https://github.com/justthatrandomcoder) — idea, design,
+calculation core, App Store. [Levo Studio](https://levo-studio.com)
 
-## Lizenz
+## Licence
 
-Source-available. Der Code ist offen: lesen, klonen, ändern, selbst bauen, auf den
-eigenen Geräten benutzen — privat und nichtkommerziell, so weit man mag.
+Source-available. The code is open: read it, clone it, change it, build it yourself,
+run it on your own devices — privately and non-commercially, as much as you like.
 
-Nicht erlaubt sind Verkauf und jede entgeltliche Weitergabe, Unterlizenzierung, das
-Umlizenzieren unter andere Bedingungen und das Neuverpacken als fremdes Produkt oder
-fremder Dienst. Steady ist und bleibt ein Produkt von Levo Studio.
+What you may not do is sell it or pass it on for money, sublicense it, relicense it
+under different terms, or repackage it as someone else's product or service. Steady
+is and remains a product of Levo Studio.
 
-Der vollständige Text steht in [`LICENSE`](LICENSE) — PolyForm Noncommercial
-License 1.0.0.
+The full text is in [`LICENSE`](LICENSE) — PolyForm Noncommercial License 1.0.0.
 
 © 2026 Levo Studio
