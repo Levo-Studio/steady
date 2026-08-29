@@ -133,16 +133,14 @@ struct SaveWeightIntent: AppIntent {
             // enough to decide on — the number is what tells you whether this
             // is a correction or a duplicate.
             try await requestConfirmation(
-                result: .result(
-                    dialog: IntentDialog(
-                        "Today is already logged at \(formatted(today.kilograms)) kg."
-                    )
-                ),
-                confirmationActionName: .custom(
+                actionName: .custom(
                     acceptLabel: "Edit",
                     acceptAlternatives: ["Change", "Open"],
                     denyLabel: "Keep it",
                     denyAlternatives: ["Cancel"]
+                ),
+                dialog: IntentDialog(
+                    "Today is already logged at \(formatted(today.kilograms)) kg."
                 )
             )
             // Confirmed. The editor is the one screen that can change or delete
