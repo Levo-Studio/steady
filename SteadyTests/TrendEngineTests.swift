@@ -242,6 +242,8 @@ struct TrendEngineTests {
 
     private var midnightUTC: Date { Date(timeIntervalSince1970: 1_699_920_000) }
 
+    private let steadyBundle = "levo-studio.Steady"
+
     @Test("Skipped days are absent, not interpolated, and X is by index")
     func gapsAreNotBackFilled() {
         let calendar = utc
@@ -279,6 +281,65 @@ struct TrendEngineTests {
             )
         }
         #expect(TrendEngine.dailyValues(from: samples, calendar: calendar) == [70, 71, 72])
+    }
+
+    @Test("Steady's own sample wins the day over an earlier one from elsewhere")
+    func steadyWrittenSampleWinsTheDay() {
+        let calendar = utc
+        let morning = midnightUTC.addingTimeInterval(6 * 3600)
+        let evening = midnightUTC.addingTimeInterval(20 * 3600)
+        let samples = [
+            // A smart scale at 06:00 …
+            WeightSample(date: morning, kilograms: 73.1, sourceBundleIdentifier: "com.scale.app"),
+            // … and the user typing their own figure at 20:00.
+            WeightSample(date: evening, kilograms: 72.4, sourceBundleIdentifier: steadyBundle)
+        ]
+        let values = TrendEngine.dailyValues(
+            from: samples, calendar: calendar, steadyBundleIdentifier: steadyBundle
+        )
+        #expect(values == [72.4])
+    }
+
+    @Test("The earliest-sample rule still holds on days Steady did not write")
+    func earliestSampleWinsWithoutASteadyEntry() {
+        let calendar = utc
+        let morning = midnightUTC.addingTimeInterval(6 * 3600)
+        let evening = midnightUTC.addingTimeInterval(20 * 3600)
+        let samples = [
+            WeightSample(date: evening, kilograms: 73.1, sourceBundleIdentifier: "com.scale.app"),
+            WeightSample(date: morning, kilograms: 72.4, sourceBundleIdentifier: "com.scale.app")
+        ]
+        let values = TrendEngine.dailyValues(
+            from: samples, calendar: calendar, steadyBundleIdentifier: steadyBundle
+        )
+        #expect(values == [72.4])
+    }
+
+    @Test("Two Steady samples on one day resolve to the later one")
+    func latestSteadySampleWins() {
+        let calendar = utc
+        let first = midnightUTC.addingTimeInterval(7 * 3600)
+        let corrected = midnightUTC.addingTimeInterval(9 * 3600)
+        let samples = [
+            WeightSample(date: first, kilograms: 72.4, sourceBundleIdentifier: steadyBundle),
+            WeightSample(date: corrected, kilograms: 72.9, sourceBundleIdentifier: steadyBundle)
+        ]
+        let values = TrendEngine.dailyValues(
+            from: samples, calendar: calendar, steadyBundleIdentifier: steadyBundle
+        )
+        #expect(values == [72.9])
+    }
+
+    @Test("Ownership is ignored when the caller does not say who Steady is")
+    func precedenceNeedsABundleIdentifier() {
+        let calendar = utc
+        let morning = midnightUTC.addingTimeInterval(6 * 3600)
+        let evening = midnightUTC.addingTimeInterval(20 * 3600)
+        let samples = [
+            WeightSample(date: morning, kilograms: 73.1, sourceBundleIdentifier: "com.scale.app"),
+            WeightSample(date: evening, kilograms: 72.4, sourceBundleIdentifier: steadyBundle)
+        ]
+        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar) == [73.1])
     }
 
     @Test("Weekly means bucket short histories without inventing days")

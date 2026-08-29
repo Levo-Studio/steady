@@ -117,9 +117,11 @@ actor HealthService: HealthServicing {
 
     func readDailyReadings() async throws -> [WeightSample] {
         let samples = try await rawSamples()
-        // One value per day, the earliest sample of that calendar day, because
-        // the product is about morning weight under consistent conditions.
-        return TrendEngine.dailyReadings(from: samples, calendar: calendar)
+        return TrendEngine.dailyReadings(
+            from: samples,
+            calendar: calendar,
+            steadyBundleIdentifier: appBundleIdentifier
+        )
     }
 
     private func rawSamples() async throws -> [WeightSample] {

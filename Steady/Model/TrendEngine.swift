@@ -31,33 +31,74 @@ nonisolated enum TrendEngine {
 
     /// Collapses HealthKit samples to one value per calendar day, in date order.
     ///
-    /// A day is represented by its **earliest** sample, because the product is
-    /// about morning weight taken under consistent conditions. Days with no
-    /// reading are simply absent — the series is never interpolated or
-    /// back-filled, and a gap makes the line's recovery slower in wall-clock
-    /// terms, which is honest.
+    /// Two rules, in this order:
+    ///
+    /// 1. **If Steady itself wrote a sample for that day, that sample is the
+    ///    day's value.** An entry the user made by hand always beats another
+    ///    source. Without this a smart scale that writes at 06:00 would make
+    ///    the user's own 20:00 entry invisible — the app would show a number
+    ///    the user did not type and offer no way to correct it. Where Steady
+    ///    somehow wrote more than once, the latest wins, because that is the
+    ///    most recent thing the user said.
+    /// 2. Otherwise the day is represented by its **earliest** sample, because
+    ///    the product is about morning weight taken under consistent
+    ///    conditions.
+    ///
+    /// Days with no reading are simply absent — the series is never
+    /// interpolated or back-filled, and a gap makes the line's recovery slower
+    /// in wall-clock terms, which is honest.
+    ///
+    /// - Parameter steadyBundleIdentifier: Steady's own bundle identifier.
+    ///   `nil` disables rule 1 and leaves the earliest-sample rule alone,
+    ///   which is what a caller with no notion of ownership wants.
     static func dailyValues(
         from samples: [WeightSample],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        steadyBundleIdentifier: String? = nil
     ) -> [Double] {
-        dailyReadings(from: samples, calendar: calendar).map(\.kilograms)
+        dailyReadings(
+            from: samples,
+            calendar: calendar,
+            steadyBundleIdentifier: steadyBundleIdentifier
+        ).map(\.kilograms)
     }
 
-    /// As `dailyValues(from:calendar:)`, but keeping the sample that represents
-    /// each day so the caller can attribute or delete it.
+    /// As `dailyValues(from:calendar:steadyBundleIdentifier:)`, but keeping the
+    /// sample that represents each day so the caller can attribute or delete it.
     static func dailyReadings(
         from samples: [WeightSample],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        steadyBundleIdentifier: String? = nil
     ) -> [WeightSample] {
-        var earliestByDay: [Date: WeightSample] = [:]
+        var chosenByDay: [Date: WeightSample] = [:]
         for sample in samples {
             let day = calendar.startOfDay(for: sample.date)
-            if let existing = earliestByDay[day], existing.date <= sample.date { continue }
-            earliestByDay[day] = sample
+            guard let existing = chosenByDay[day] else {
+                chosenByDay[day] = sample
+                continue
+            }
+            chosenByDay[day] = preferred(
+                existing, over: sample,
+                steadyBundleIdentifier: steadyBundleIdentifier
+            )
         }
-        return earliestByDay
+        return chosenByDay
             .sorted { $0.key < $1.key }
             .map(\.value)
+    }
+
+    /// Which of two samples from the same day represents that day.
+    private static func preferred(
+        _ a: WeightSample,
+        over b: WeightSample,
+        steadyBundleIdentifier: String?
+    ) -> WeightSample {
+        let aIsOurs = a.isOwnedBySteady(appBundleIdentifier: steadyBundleIdentifier)
+        let bIsOurs = b.isOwnedBySteady(appBundleIdentifier: steadyBundleIdentifier)
+        if aIsOurs != bIsOurs { return aIsOurs ? a : b }
+        // Both Steady's, or neither: the user's latest word, or the morning.
+        if aIsOurs { return a.date >= b.date ? a : b }
+        return a.date <= b.date ? a : b
     }
 
     // MARK: - Smoothing
