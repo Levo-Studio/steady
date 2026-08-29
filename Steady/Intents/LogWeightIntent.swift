@@ -99,7 +99,9 @@ struct SaveWeightIntent: AppIntent {
     static let title: LocalizedStringResource = "Save Weight"
 
     static let description = IntentDescription(
-        "Saves a weight to Apple Health without opening Steady. If today is already logged, it opens the editor instead of overwriting it.",
+        // App Store validation 90626 rejects "Apple" anywhere in an intent
+        // description, so this says Health rather than Apple Health.
+        "Saves a weight to Health without opening Steady. If today is already logged, it opens the editor instead of overwriting it.",
         categoryName: "Logging",
         searchKeywords: ["weight", "save", "health"]
     )
@@ -115,7 +117,7 @@ struct SaveWeightIntent: AppIntent {
     var kilograms: Double
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Save \(\.$kilograms) kg to Apple Health")
+        Summary("Save \(\.$kilograms) kg to Health")
     }
 
     func perform() async throws -> some IntentResult & OpensIntent & ProvidesDialog {
