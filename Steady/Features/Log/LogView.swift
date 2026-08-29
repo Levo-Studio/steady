@@ -123,6 +123,10 @@ struct LogView: View {
     }
 }
 
+#if DEBUG
+// The previews below use LogPreviewSupport, which is itself DEBUG-only.
+// #Preview blocks are compiled in Release, so leaving these unguarded broke
+// the Release build.
 #Preview("Light — entry") {
     @Previewable @State var tab = RootTab.log
     LogPreviewHost(scheme: .light, readings: WeightSample.previewHistory(today: nil)) {
@@ -150,3 +154,5 @@ struct LogView: View {
         LogView(selectedTab: $tab)
     }
 }
+
+#endif

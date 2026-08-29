@@ -106,6 +106,10 @@ private struct CheckGlyph: Shape {
     }
 }
 
+#if DEBUG
+// The previews below use LogPreviewSupport, which is itself DEBUG-only.
+// #Preview blocks are compiled in Release, so leaving these unguarded broke
+// the Release build.
 #Preview("Light") {
     @Previewable @State var tab = RootTab.log
     let history = WeightSample.previewHistory()
@@ -121,3 +125,5 @@ private struct CheckGlyph: Shape {
         LoggedTodayScreen(reading: history[history.count - 1], selectedTab: $tab) {}
     }
 }
+
+#endif

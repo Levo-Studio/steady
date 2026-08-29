@@ -222,6 +222,10 @@ struct EditTodayScreen: View {
     }
 }
 
+#if DEBUG
+// The previews below use LogPreviewSupport, which is itself DEBUG-only.
+// #Preview blocks are compiled in Release, so leaving these unguarded broke
+// the Release build.
 #Preview("Light") {
     @Previewable @State var tab = RootTab.log
     let history = WeightSample.previewHistory()
@@ -253,6 +257,8 @@ struct EditTodayScreen: View {
         EditTodayScreenDeletePreview(reading: history[history.count - 1], selectedTab: $tab)
     }
 }
+
+#endif
 
 #if DEBUG
 /// Opens the Edit screen with the confirmation already showing, so §7.7 has a
