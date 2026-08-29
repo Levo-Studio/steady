@@ -108,15 +108,18 @@ struct TrendEngineTests {
         #expect(series.trend == Array(trend.suffix(30)))
     }
 
-    @Test("The year is 52 weekly means run through a second EWMA at alpha 0.3")
+    @Test("The year is 52 weekly means run through a second EWMA at alpha 0.12")
     func yearSeries() {
         let values = ReferenceSeries.raw
         let series = TrendEngine.series(for: .year, values: values, trend: TrendEngine.trend(for: values))
         #expect(series.raw.count == 52)
         #expect(abs(series.raw[0] - 71.9533419028) < 1e-9)
         #expect(abs(series.raw[51] - 72.5495907986) < 1e-9)
-        #expect(abs(series.trend[51] - 71.6585416070) < 1e-9)
-        #expect(series.trend == TrendEngine.ewma(series.raw, alpha: 0.3))
+        // Year deviates from reference-weight.js on purpose: its alpha was lowered
+        // from 0.3 to 0.12 so the line averages the weekly dots instead of tracking
+        // them. Value recomputed from the same series at the new alpha.
+        #expect(abs(series.trend[51] - 70.9595499382) < 1e-9)
+        #expect(series.trend == TrendEngine.ewma(series.raw, alpha: TrendEngine.yearAlpha))
     }
 
     @Test("A day shows the same trend value on the month chart and the year chart")

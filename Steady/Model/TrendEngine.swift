@@ -22,7 +22,7 @@ nonisolated enum TrendEngine {
 
     /// The second pass applied to the year view's weekly means, which are
     /// already smooth enough that the primary EWMA traced every wiggle.
-    static let yearAlpha: Double = 0.3
+    static let yearAlpha: Double = 0.12
 
     /// The year view is 52 whole weeks.
     static let yearSpanInDays = 364

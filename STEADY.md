@@ -153,14 +153,16 @@ month chart and the year chart.
 |---|---|---|
 | Week | last 7 daily readings | **least-squares straight-line fit** through those 7 readings |
 | Month | last 30 daily readings | the EWMA series |
-| Year | 52 weekly means | those means through a **second EWMA, α = 0.3** |
+| Year | 52 weekly means | those means through a **second EWMA, α = 0.12** |
 
 The two exceptions are not inconsistencies, they are corrections for what happens to an
 EWMA at the extremes of window length. Over seven points the EWMA still carries most of the
 raw wobble, so a week chart would show two noisy lines and communicate nothing; the linear
 fit gives the week the one thing worth knowing — which way it is going. Over a year the
 input is already weekly means, which are smooth enough that the EWMA traced every one of
-them; the second pass keeps the line calmer than the dots. Both are documented in
+them; the second pass keeps the line calmer than the dots. Its α is **0.12**, lowered from
+the reference's 0.3 after looking at the rendered chart — at 0.3 the line retained 47% of the
+week-to-week movement and visibly tracked the dots instead of averaging them. Both are documented in
 `design/reference-weight.js` and both are required.
 
 ### Statistics shown

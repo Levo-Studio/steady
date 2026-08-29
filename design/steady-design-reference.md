@@ -304,13 +304,22 @@ for the same day.
 |---|---|---|
 | Week | last 7 daily readings | **least-squares straight line** fitted through those 7 readings — *not* the EWMA |
 | Month | last 30 daily readings | the EWMA series |
-| Year | 52 weekly means of the daily readings | those weekly means run through a **second EWMA with α = 0.3** |
+| Year | 52 weekly means of the daily readings | those weekly means run through a **second EWMA with α = 0.12** |
 
 The week exception is deliberate and is documented in the source: over seven points the
 EWMA wobbles nearly as much as the raw values, so the chart would show two noisy lines
 instead of a calm line with readings scattered around it. The straight fit gives the week
 view the thing the product promises — direction. The year needs the opposite fix: weekly
 means are already so smooth that the EWMA traced every wiggle, so it gets a second pass.
+
+**The year's α was lowered from 0.3 to 0.12 by the owner**, after looking at the rendered
+chart. This is a deliberate departure from `design/reference-weight.js`, which still carries
+0.3 — the Swift value wins. The reason is measurable: on the reference series, α = 0.3 leaves
+**47%** of the week-to-week movement in the "trend" line, so it visibly tracks the dots it is
+supposed to be averaging. α = 0.12 leaves 27%. In memory terms it moves the centre of mass
+from 2.3 weeks to 7.3 weeks and the half-life from 1.9 to 5.4 weeks — about a month and a half
+of history, which is the right order for a chart spanning a year, and still turns inside two
+months when the direction genuinely changes.
 
 ### Chart scaling
 
