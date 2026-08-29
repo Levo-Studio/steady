@@ -51,7 +51,12 @@ struct TrendHeader: View {
             HStack(alignment: .firstTextBaseline, spacing: Self.headlineUnitGap) {
                 Text(summary.headline)
                     .steadyTextStyle(.trendHeadline)
-                    .foregroundStyle(isEmpty ? Palette.mut : Palette.ink)
+                    .foregroundStyle(Palette.ink)
+                    // §9: the headline transitions with `settle` on a range
+                    // change, and the digits roll rather than the whole string
+                    // swapping. Kept under Reduce Motion — a numeric transition
+                    // is a cross-fade, not a translation.
+                    .contentTransition(.numericText())
                     // The design is authored at 402 pt and §1 requires it to
                     // hold down to 320. A true `space-between` is enough for a
                     // two-digit weight from 375 up, but not below it and not
@@ -65,6 +70,9 @@ struct TrendHeader: View {
                     // its authored width.
                     .lineLimit(1)
                     .minimumScaleFactor(Self.headlineMinimumScale)
+                    // §7.3's em dash, drawn on the numerals' centre-line rather
+                    // than set as a glyph 8 pt below it. See `ValuePlaceholder`.
+                    .valuePlaceholder(isEmpty, style: .trendHeadline)
                 Text("kg")
                     .steadyTextStyle(.trendHeadlineUnit)
                     .foregroundStyle(Palette.mut)
@@ -91,6 +99,9 @@ struct TrendHeader: View {
         Text(summary.badge)
             .steadyTextStyle(.deltaBadge)
             .foregroundStyle(Palette.acsoftink)
+            // §9: the badge is one of the figures that changes because the user
+            // changed a range, so its digits roll with the headline's.
+            .contentTransition(.numericText())
             .padding(.vertical, Metrics.space2)
             .padding(.horizontal, Metrics.space3)
             .background(Palette.acsoft, in: .capsule)
@@ -158,7 +169,7 @@ struct PeriodEntrance: ViewModifier {
                 MoveKeyframe(0)
                 LinearKeyframe(
                     1,
-                    duration: Metrics.periodChangeDuration,
+                    duration: Motion.periodChangeDuration,
                     timingCurve: .ease
                 )
             }
@@ -166,7 +177,7 @@ struct PeriodEntrance: ViewModifier {
                 MoveKeyframe(lift)
                 LinearKeyframe(
                     0,
-                    duration: Metrics.periodChangeDuration,
+                    duration: Motion.periodChangeDuration,
                     timingCurve: .ease
                 )
             }

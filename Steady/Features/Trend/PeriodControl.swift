@@ -22,6 +22,13 @@ struct PeriodControl: View {
     /// is a real event here rather than a no-op.
     var onSelect: (Period) -> Void = { _ in }
 
+    @Environment(\.motion) private var motion
+    /// The control survives a range change, so its pill's namespace can live
+    /// here — unlike the tab bar's, whose screen is rebuilt underneath it.
+    @Namespace private var pillNamespace
+
+    private static let pillID = "steady.periodControl.pill"
+
     var body: some View {
         // The container's `4` pt vertical padding lives on each segment rather
         // than on the stack, so the segment's tap target fills the full 44 pt
@@ -33,19 +40,24 @@ struct PeriodControl: View {
             ForEach(Period.allCases) { period in
                 let isSelected = period == selection
                 Button {
-                    selection = period
-                    onSelect(period)
+                    // §9: the pill slides with `settle`, and the same
+                    // transaction carries the headline's and the stats grid's
+                    // numeric transitions — they all describe one range change.
+                    withAnimation(motion.settle) {
+                        selection = period
+                        onSelect(period)
+                    }
                 } label: {
                     Text(period.title)
                         .steadyTextStyle(.periodSegment)
                         .foregroundStyle(isSelected ? Palette.bg : Palette.mut)
                         .frame(maxWidth: .infinity)
                         .frame(height: Metrics.periodSegmentHeight)
-                        .background(isSelected ? Palette.ink : .clear, in: .capsule)
+                        .background { if isSelected { pill } }
                         .padding(.vertical, Metrics.periodControlPadding)
                         .contentShape(.rect)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .accessibilityLabel(period.title)
                 .accessibilityHint("Shows the \(period.title.lowercased()) range")
                 .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
@@ -53,6 +65,22 @@ struct PeriodControl: View {
         }
         .padding(.horizontal, Metrics.periodControlPadding)
         .background(Palette.bg, in: .capsule)
+    }
+
+    /// The `ink` fill behind the selected segment — the same view moving
+    /// between the three positions, not three capsules cross-fading. Under
+    /// Reduce Motion it cross-fades instead, which is the removal §9 names.
+    @ViewBuilder
+    private var pill: some View {
+        if motion.slidesPill {
+            Capsule()
+                .fill(Palette.ink)
+                .matchedGeometryEffect(id: Self.pillID, in: pillNamespace)
+        } else {
+            Capsule()
+                .fill(Palette.ink)
+                .transition(.opacity)
+        }
     }
 }
 

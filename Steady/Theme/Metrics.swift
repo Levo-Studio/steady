@@ -148,12 +148,10 @@ nonisolated enum Metrics {
     /// The gap between the mark and the wordmark.
     static let wordmarkGap: CGFloat = 12
 
-    // MARK: - Motion (design reference §9)
-
-    /// The only timed animation in the product: the period change.
-    static let periodChangeDuration: Double = 0.34
-    /// The lift that accompanies it, dropped under Reduce Motion.
-    static let periodChangeLift: CGFloat = 6
+    // Motion lives in `Theme/Motion.swift`. Design reference §9 is a system of
+    // three springs rather than a set of numbers, so it needs SwiftUI's
+    // `Animation` and cannot sit in this CoreGraphics-only file — and keeping
+    // half of it here would give the app two places to look.
 
     // MARK: - Delete confirmation (design reference §7.7)
 

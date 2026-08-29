@@ -24,11 +24,7 @@ struct EditTodayScreen: View {
     @State private var isConfirmingDelete = false
     @State private var isWorking = false
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// The sheet is one of the four movements the design allows. 0.28s so it
-    /// arrives without ceremony.
-    private static let sheetDuration: Double = 0.28
+    @Environment(\.motion) private var motion
 
     init(reading: WeightSample, selectedTab: Binding<RootTab>, onDismiss: @escaping () -> Void) {
         self.reading = reading
@@ -36,6 +32,21 @@ struct EditTodayScreen: View {
         self.onDismiss = onDismiss
         _value = State(initialValue: RulerGeometry.snap(reading.kilograms))
     }
+
+    #if DEBUG
+    /// Opens with the confirmation already up, so §7.7 can be rendered on a
+    /// device and looked at. Debug builds only — the shipping initialiser above
+    /// has no way to reach this state except through the Delete button.
+    init(
+        reading: WeightSample,
+        selectedTab: Binding<RootTab>,
+        confirmingDelete: Bool,
+        onDismiss: @escaping () -> Void
+    ) {
+        self.init(reading: reading, selectedTab: selectedTab, onDismiss: onDismiss)
+        _isConfirmingDelete = State(initialValue: confirmingDelete)
+    }
+    #endif
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -56,16 +67,20 @@ struct EditTodayScreen: View {
                     onDelete: delete,
                     onKeep: { setConfirming(false) }
                 )
-                .padding(.horizontal, Metrics.space4)
-                .padding(.bottom, Metrics.space5)
-                .ignoresSafeArea(.container, edges: .bottom)
-                .transition(
-                    reduceMotion
-                        ? .opacity
-                        : .move(edge: .bottom).combined(with: .opacity)
-                )
+                // §7.7, revised: flush. No side inset, no bottom inset — the
+                // sheet spans the full width and its bottom edge is the bottom
+                // of the display. The stack below is what reaches the physical
+                // edge; the sheet is simply aligned to it.
+                .transition(motion.sheet)
             }
         }
+        // The sheet is bottom-aligned in this stack, so the stack is what has to
+        // reach the physical bottom of the display. Expanding the sheet itself
+        // does not work: `screen` already opts out of the safe area, so the
+        // stack is laid out inside it and a child's `.ignoresSafeArea` has
+        // nothing left to expand into — the fill stopped exactly one home
+        // indicator short of the edge.
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 
     // MARK: - The screen
@@ -127,7 +142,7 @@ struct EditTodayScreen: View {
                     .padding(.vertical, LogMetrics.headerTargetInset)
                     .contentShape(.rect)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .padding(.vertical, -LogMetrics.headerTargetInset)
 
             Spacer(minLength: Metrics.space4)
@@ -142,7 +157,7 @@ struct EditTodayScreen: View {
                     .padding(.vertical, LogMetrics.headerTargetInset)
                     .contentShape(.rect)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .padding(.vertical, -LogMetrics.headerTargetInset)
             .disabled(!canDelete || isWorking)
             .accessibilityHint(canDelete ? "" : "This reading was written by another app and cannot be deleted here.")
@@ -169,7 +184,10 @@ struct EditTodayScreen: View {
     }
 
     private func setConfirming(_ confirming: Bool) {
-        withAnimation(.easeOut(duration: Self.sheetDuration)) {
+        // §9: the sheet rises from the bottom edge with `present` while the
+        // scrim and the blur behind it fade over the same duration — one
+        // transaction, so they cannot drift apart.
+        withAnimation(motion.present) {
             isConfirmingDelete = confirming
         }
     }
@@ -256,8 +274,6 @@ private struct EditTodayScreenDeletePreview: View {
                 onDelete: {},
                 onKeep: {}
             )
-            .padding(.horizontal, Metrics.space4)
-            .padding(.bottom, Metrics.space5)
             .ignoresSafeArea(.container, edges: .bottom)
         }
     }

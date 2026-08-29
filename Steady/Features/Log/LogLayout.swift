@@ -7,6 +7,30 @@
 //
 
 import SwiftUI
+import UIKit
+
+// MARK: - The physical screen
+
+/// The display's own safe-area insets.
+///
+/// Design reference §7.7 needs both halves of the safe area at once: the delete
+/// sheet's fill runs to the **physical** bottom edge, while its `24` pt bottom
+/// padding carries the inset on top of it so the buttons clear the home
+/// indicator. SwiftUI cannot express that with `.safeAreaPadding` — that
+/// modifier *consumes* the inset, which leaves the `.ignoresSafeArea` outside it
+/// nothing to expand into and stops the fill short of the edge. So the figure is
+/// read directly and added as ordinary padding.
+@MainActor
+enum ScreenInsets {
+
+    static var bottom: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }?
+            .safeAreaInsets.bottom ?? 0
+    }
+}
 
 // MARK: - Metrics local to Log
 

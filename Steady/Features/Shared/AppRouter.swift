@@ -24,19 +24,49 @@ final class AppRouter {
 
     /// Set when something outside the UI asks for the Log entry screen, ruler
     /// ready. The Log screen consumes it and clears it.
-    var wantsLogEntry = false
+    private(set) var wantsLogEntry = false
+
+    /// Set when something asks to edit the reading today already has — the
+    /// Today cell on the Trend screen is the only caller so far.
+    ///
+    /// The two requests are mutually exclusive by construction: each setter
+    /// clears the other. They ask for different screens, so a router holding
+    /// both would leave the Log screen picking one arbitrarily, and the loser
+    /// would sit there until some unrelated event happened to consume it.
+    private(set) var wantsEditToday = false
 
     /// Routes to Log and asks it to present entry rather than the
     /// already-logged state.
     func routeToLogEntry() {
         tab = .log
         wantsLogEntry = true
+        wantsEditToday = false
+    }
+
+    /// Routes to Log and asks it to present design reference §7.6 for today's
+    /// existing reading.
+    ///
+    /// Before this existed the Trend screen's Today cell called
+    /// `routeToLogEntry()`, which dropped a blank ruler over a day that was
+    /// already logged — the user was offered a fresh entry for a reading they
+    /// had asked to correct.
+    func routeToEditToday() {
+        tab = .log
+        wantsEditToday = true
+        wantsLogEntry = false
     }
 
     /// Reads the request exactly once.
     func consumeLogEntryRequest() -> Bool {
         guard wantsLogEntry else { return false }
         wantsLogEntry = false
+        return true
+    }
+
+    /// Reads the request exactly once.
+    func consumeEditTodayRequest() -> Bool {
+        guard wantsEditToday else { return false }
+        wantsEditToday = false
         return true
     }
 }

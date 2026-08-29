@@ -41,7 +41,7 @@ struct StepperRow: View {
                 .background(Palette.sur, in: .capsule)
                 .contentShape(.capsule)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .accessibilityLabel(label)
     }
 }
