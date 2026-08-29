@@ -161,6 +161,7 @@ struct ScreenScenarioHost: View {
 struct MotionRehearsal: View {
 
     @Environment(WeightStore.self) private var store
+    @Environment(\.motion) private var motion
 
     @State private var tab = RootTab.trend
     @State private var period = Period.week
@@ -204,7 +205,7 @@ struct MotionRehearsal: View {
         .overlay(alignment: .bottom) {
             if showsSheet {
                 DeleteConfirmationSheet(kilograms: 72.4, date: .now, onDelete: {}, onKeep: {})
-                    .transition(Motion.sheetTransitionForRehearsal)
+                    .transition(motion.sheet)
             }
         }
         .ignoresSafeArea(.container, edges: .vertical)
@@ -231,13 +232,6 @@ struct MotionRehearsal: View {
             withAnimation(Motion.settle) { tab = tab == .trend ? .log : .trend }
         }
     }
-}
-
-extension Motion {
-    /// The rehearsal cannot reach `SteadyMotion` from a static context, and the
-    /// sheet's transition is the one piece of §9 it has to state twice.
-    static let sheetTransitionForRehearsal: AnyTransition =
-        .move(edge: .bottom).combined(with: .opacity)
 }
 
 #endif
