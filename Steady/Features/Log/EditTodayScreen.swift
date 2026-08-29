@@ -124,8 +124,11 @@ struct EditTodayScreen: View {
                 Text("Cancel")
                     .steadyTextStyle(.headerCancel)
                     .foregroundStyle(Palette.mut)
+                    .padding(.vertical, LogMetrics.headerTargetInset)
+                    .contentShape(.rect)
             }
             .buttonStyle(.plain)
+            .padding(.vertical, -LogMetrics.headerTargetInset)
 
             Spacer(minLength: Metrics.space4)
 
@@ -136,14 +139,18 @@ struct EditTodayScreen: View {
                     // control drops out of the danger colour entirely rather
                     // than offering an action that would silently fail.
                     .foregroundStyle(canDelete ? Palette.danger : Palette.mut)
+                    .padding(.vertical, LogMetrics.headerTargetInset)
+                    .contentShape(.rect)
             }
             .buttonStyle(.plain)
+            .padding(.vertical, -LogMetrics.headerTargetInset)
             .disabled(!canDelete || isWorking)
             .accessibilityHint(canDelete ? "" : "This reading was written by another app and cannot be deleted here.")
         }
-        // The header row is the one place a 44 pt target is not implied by the
-        // control's own height, so it is given one.
-        .frame(minHeight: Metrics.tabItemHeight)
+        // STEADY.md §11: the 44 pt target is grown on each label above, not
+        // with a minHeight here. A minHeight on this stack would expand the
+        // row, leave the buttons their intrinsic ~18 pt, and push everything
+        // below it 29 pt down the screen.
     }
 
     // MARK: - State
