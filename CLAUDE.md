@@ -84,11 +84,18 @@ repackageable. Steady remains a Levo Studio product.
 ```
 Steady/            app source (SwiftUI)
 Steady.xcodeproj/  Xcode project
-branding/          the mark and the Icon Composer source
+branding/          the mark and the wordmark lockup
 docs/              case study notes
 design/            the design reference (imported from Claude Design)
 ```
 
-The mark is `branding/steady-mark-light.png` / `branding/steady-mark-dark.png`, and
-`branding/steady-icon.icon` is the Icon Composer document the app icon is built from.
-These are the existing brand assets — use them. Do not generate new ones.
+The mark is `branding/steady-mark-light.png` / `branding/steady-mark-dark.png`, with the
+wordmark lockup alongside it as SVG. These are the existing brand assets — use them, do not
+generate new ones.
+
+The app icon is `Steady/steady-icon.icon`, an Icon Composer document. It lives inside the
+target rather than in `branding/` because `actool` has to compile it: the synchronized folder
+group picks it up automatically and `ASSETCATALOG_COMPILER_APPICON_NAME` points at
+`steady-icon`. There is no `AppIcon.appiconset` — it was an empty placeholder and was removed.
+Its mark uses the literal logo hex (`#2b6ba8` light, `#5fbcea` dark) per design reference §8,
+not the app's OKLCH accent.

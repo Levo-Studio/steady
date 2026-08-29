@@ -6,6 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		76A100073042C7DB0052A012 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 769D84F63042C7DB0052A012 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 769D84FD3042C7DB0052A012;
+			remoteInfo = Steady;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		769D84FE3042C7DB0052A012 /* Steady.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Steady.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		76A100013042C7DB0052A012 /* SteadyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SteadyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -118,10 +128,6 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					76A100033042C7DB0052A012 = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = 769D84FD3042C7DB0052A012;
-					};
 					769D84FD3042C7DB0052A012 = {
 						CreatedOnToolsVersion = 26.2;
 						SystemCapabilities = {
@@ -129,6 +135,10 @@
 								enabled = 1;
 							};
 						};
+					};
+					76A100033042C7DB0052A012 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 769D84FD3042C7DB0052A012;
 					};
 				};
 			};
@@ -185,16 +195,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXContainerItemProxy section */
-		76A100073042C7DB0052A012 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 769D84F63042C7DB0052A012 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 769D84FD3042C7DB0052A012;
-			remoteInfo = Steady;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXTargetDependency section */
 		76A100083042C7DB0052A012 /* PBXTargetDependency */ = {
@@ -329,7 +329,7 @@
 		769D850A3042C7DB0052A012 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "steady-icon";
 				CODE_SIGN_ENTITLEMENTS = Steady.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -363,7 +363,7 @@
 		769D850B3042C7DB0052A012 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "steady-icon";
 				CODE_SIGN_ENTITLEMENTS = Steady.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
