@@ -202,7 +202,10 @@ private struct TrendPreviewHost: View {
 }
 
 #Preview("Access off — light") {
-    TrendPreviewHost(readings: [], accessState: .off)
+    // §7.9 is §7.8 plus one row, so the variant that matters is the one with
+    // history. The empty-history case is a different state entirely and has its
+    // own preview below.
+    TrendPreviewHost(readings: TrendPreviewData.samples(days: 60), accessState: .off)
         .preferredColorScheme(.light)
 }
 
