@@ -43,7 +43,10 @@ struct TrendView: View {
                     .padding(.top, Metrics.space3)
             }
 
-            Spacer(minLength: Metrics.space4)
+            // §7.8: a bare `Spacer`, i.e. `margin-top: auto`. A `minLength`
+            // is a floor, and on a short screen it pushes the tab bar past the
+            // bottom padding instead of letting the stack close up.
+            Spacer()
 
             TabBar(selection: $selectedTab)
         }
