@@ -201,7 +201,7 @@ Heights:
 | Stepper button (− / +) | `60` |
 | Sheet button (Delete entry / Keep it) | `56` |
 | Tab bar item | `44` (in a `5` pt container → `54` total) |
-| Period segment | `36` (in a `4` pt container → `44` total) |
+| Period segment | `36` visual, in a `4` pt container → `44`, which is also its tap target |
 | "Access off" banner | `48` |
 | Health toggle | `31 × 51`, knob `27`, inset `2` |
 
@@ -238,10 +238,21 @@ the drag.
 - The strip scrolls under the fixed needle. Dragging **left** (negative x) increases the
   value; the ticks move the way the user's finger does.
 - The value **snaps to 0.1 kg**. It is never displayed or stored at finer resolution.
+- **The strip is detented and snaps with the value.** The tick under the needle is always
+  aligned to it — the strip never rests between ticks, during the drag or after it. This is
+  settled, and it means there is **no settle animation on release**, because there is nothing
+  left to settle. A strip that tracked continuously and then eased onto the nearest tick when
+  the finger lifted would be a fifth movement, and §9 says there are four. It is also the
+  worse control: a detent that lands visibly and haptically on each tick is what makes this
+  feel like an instrument rather than a slider with a vibration attached.
 - **Haptic feedback fires once per 0.1 kg tick crossed** during the drag — a light
   selection-style impact, not a notification. This is what makes the control feel like an
   instrument rather than a slider. Fire on the crossing, not on every frame, and never
   fire more than once for the same tick.
+- **At most one tick per frame.** A fast flick can cross several ticks between two frames;
+  fire once, not once per tick crossed. Several impacts in a single frame do not read as
+  several detents, they read as a buzz — the exact failure this rule exists to prevent. A
+  deliberate departure from a literal reading of "once per 0.1 kg crossed", and settled.
 - The `−` and `+` buttons step by exactly `0.1` and are for fine-tuning after the drag.
   They are not the primary path. Each press also fires one haptic tick.
 - The initial value is **yesterday's reading** when one exists. If there is no prior
@@ -250,8 +261,9 @@ the drag.
 - The big `104` pt value above the ruler updates live during the drag. Because it is
   tabular, it must not reflow.
 - Under Reduce Motion the drag still tracks the finger — it is direct manipulation, not an
-  animation — but the value's transition and any settle animation are removed. Haptics
-  follow the system haptics setting.
+  animation. There is nothing else to remove: the strip is detented, so no settle animation
+  exists in the first place. Haptics follow the system haptics setting and are **not** gated
+  on Reduce Motion — that is a different preference.
 
 ### Stepper row
 
