@@ -91,6 +91,9 @@ Notes that matter:
 - Two of those conversions differ sharply from the hex fallbacks that were previously
   quoted here, so if you have seen `#2b6ba8` or `#c8322f` described as the accent and the
   danger colour, that was wrong: the real values are `#0072a8` and the crimson `#9c1143`.
+- **This was raised with the owner and is settled: follow the design file.** The design file
+  renders OKLCH, so OKLCH is the colour. The question is closed — do not reopen it, and do
+  not "correct" the accent toward the logo blue or the danger toward a conventional red.
 - **`ac` in light mode falls outside sRGB.** Construct the palette in Display P3 (or any
   wide-gamut space); clamping it into sRGB visibly dulls the accent.
 - **The logo is the one exception.** `branding/` and the wordmark lockup use literal
@@ -509,8 +512,13 @@ solid centre dot at `r = 4.2`, both in `ac`. At icon scale (512 box) that is `r 
 stroke `51`, and `r = 82.6`. The wordmark sets "steady" in Helvetica Neue 500 at
 `−0.03em`, lowercase, in `ink`, with the mark to its left.
 
-The mark is `ac` in both themes — `#2b6ba8` on light, `#5fbcea` on dark — and the wordmark
-is `ink`. Shipped assets live in `branding/`.
+**In the app**, the mark and wordmark take `ac` and `ink` from the palette — the concept's
+in-app header uses `var(--ac, …)`, which resolves to the OKLCH accent. **In `branding/`**,
+the exported asset files use literal `#2b6ba8` / `#5fbcea`, because the logo sheet in the
+design project is authored in hex rather than OKLCH.
+
+So the app accent and the logo blue are very slightly different, and that is correct. Do
+not reconcile them in either direction.
 
 ---
 
