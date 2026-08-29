@@ -78,17 +78,6 @@ nonisolated enum RulerGeometry {
 
     // MARK: - Strip position
 
-    /// How far the strip has slipped from having a tick exactly under the
-    /// needle, in points.
-    ///
-    /// The strip is drawn from the tick nearest the needle outwards and then
-    /// shifted by this, which keeps the major/minor pattern stable while the
-    /// offset — the only part that has to animate on release — stays a plain
-    /// animatable number. It is always within half a tick of zero.
-    static func phase(for value: Double) -> Double {
-        offsetFromNeedle(ofTick: tickIndex(for: value), at: value) * -1
-    }
-
     /// Where a tick sits, measured from the needle.
     static func offsetFromNeedle(ofTick index: Int, at value: Double) -> Double {
         (kilograms(forTick: index) - clamp(value)) * pointsPerKilogram

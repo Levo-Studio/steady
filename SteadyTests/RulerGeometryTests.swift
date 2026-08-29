@@ -51,11 +51,37 @@ struct RulerGeometryTests {
         #expect(abs(value - (72.4 + Double(ticks) * 0.1)) < 1e-9)
     }
 
-    @Test("A part-tick drag is not snapped, so the strip tracks the finger")
-    func dragIsContinuous() {
+    @Test("A part-tick drag reaches a value the reading then snaps away")
+    func partTickDragIsSnappedForTheReading() {
+        // The conversion itself is continuous — the tick tracker needs it that
+        // way to see a crossing coming — but nothing downstream keeps it.
         let value = RulerGeometry.value(from: 72.4, translation: -7.1)
         #expect(abs(value - 72.45) < 1e-9)
-        #expect(value != RulerGeometry.snap(value))
+        #expect(RulerGeometry.snap(value) == 72.5)
+    }
+
+    // MARK: - The detent
+
+    @Test("The strip the ruler draws always has a tick exactly under the needle")
+    func stripIsDetented() {
+        // `WeightRuler` draws `TickStrip` from the snapped reading and never
+        // from the raw drag, so there is no position between two ticks to rest
+        // at — during the drag or after it. That is what removes the settle.
+        for step in 0...400 {
+            let dragged = RulerGeometry.value(from: 72.4, translation: -Double(step) * 0.37)
+            let drawn = RulerGeometry.snap(dragged)
+            let nearest = RulerGeometry.tickIndex(for: drawn)
+            #expect(abs(RulerGeometry.offsetFromNeedle(ofTick: nearest, at: drawn)) < 1e-6)
+        }
+    }
+
+    @Test("The drawn value never leaves the reading by more than half a tick")
+    func detentFollowsTheFinger() {
+        for step in 0...400 {
+            let dragged = RulerGeometry.value(from: 72.4, translation: Double(step) * 0.41)
+            let drawn = RulerGeometry.snap(dragged)
+            #expect(abs(drawn - dragged) <= RulerGeometry.kilogramsPerTick / 2 + 1e-9)
+        }
     }
 
     @Test("Points and kilograms round-trip through the tick index")
@@ -71,15 +97,6 @@ struct RulerGeometryTests {
     func offsetFromNeedle() {
         let offset = RulerGeometry.offsetFromNeedle(ofTick: 729, at: 72.4)
         #expect(abs(offset - 14.2 * 5) < 1e-6)
-    }
-
-    @Test("The strip's phase is always within half a tick of zero")
-    func phaseStaysSmall() {
-        for step in 0...200 {
-            let value = 72.0 + Double(step) * 0.017
-            let phase = RulerGeometry.phase(for: value)
-            #expect(abs(phase) <= RulerGeometry.pointsPerTick / 2 + 1e-9)
-        }
     }
 
     @Test("The visible ticks cover the strip's width")
