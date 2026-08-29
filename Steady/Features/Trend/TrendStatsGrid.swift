@@ -19,22 +19,16 @@ struct TrendStatsGrid: View {
     /// Before the first reading every value is an em dash at 36 pt in `mut` —
     /// including the fourth cell, which otherwise sits at 40 pt in `ac`.
     let isEmpty: Bool
-    /// Tapping Today opens Edit today. It is the only tappable cell.
+    /// Tapping Today opens Edit today. It is the only tappable cell, and only
+    /// when today actually has a reading.
     let onEditToday: () -> Void
 
     var body: some View {
         Grid(horizontalSpacing: 0, verticalSpacing: 0) {
             GridRow {
-                Button(action: onEditToday) {
-                    cell(label: "Today", value: TrendEngine.format(stats.today, decimals: 1))
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Today")
-                .accessibilityValue(spoken(TrendEngine.format(stats.today, decimals: 1)))
-                .accessibilityHint("Opens today’s entry")
-                .dividerRight()
-                .dividerBottom()
+                todayCell
+                    .dividerRight()
+                    .dividerBottom()
 
                 cell(label: "Yesterday", value: TrendEngine.format(stats.yesterday, decimals: 1))
                     .accessibilityElement(children: .ignore)
@@ -66,6 +60,30 @@ struct TrendStatsGrid: View {
             }
         }
         .background(Palette.sur, in: .rect(cornerRadius: Metrics.radiusStatsGrid))
+    }
+
+    /// Today is the only tappable cell — and only when there is something to
+    /// edit. With no reading for today the cell shows an em dash and the hint
+    /// "Opens today’s entry" would promise a screen for a day that has no
+    /// entry, so it is a plain cell instead. Logging today is the Log tab's job.
+    @ViewBuilder
+    private var todayCell: some View {
+        let value = TrendEngine.format(stats.today, decimals: 1)
+        if stats.today == nil {
+            cell(label: "Today", value: value)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Today")
+                .accessibilityValue(spoken(value))
+        } else {
+            Button(action: onEditToday) {
+                cell(label: "Today", value: value)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Today")
+            .accessibilityValue(spoken(value))
+            .accessibilityHint("Opens today’s entry")
+        }
     }
 
     private var perWeekValue: String {
