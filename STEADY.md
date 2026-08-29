@@ -348,7 +348,13 @@ specific rather than "make it flexible":
   `.accessibilityElement` with an adjustable trait so VoiceOver users can change the value
   with swipe up/down in 0.1 steps — this is mandatory, since there is no keypad fallback.
 - Touch targets are at least 44 × 44. The stepper buttons at 60 and the tab items at 44
-  already comply; verify nothing smaller becomes tappable.
+  already comply. **The period segment is the one apparent exception and it is not a real
+  one**: the visual pill is 36 pt, but it sits in a container padded by 4, so its tap target
+  fills the full 44 pt container height while the drawn pill stays 36. Never grow the pill to
+  reach 44. The same principle holds anywhere the design draws something smaller than a
+  finger — grow the target, never the drawing. Text buttons ("Cancel", "Delete", "Maybe
+  later") get the target on the *label*, not on the row that contains it: a `minHeight` on a
+  parent stack expands the row and leaves the button its intrinsic ~18 pt.
 - **Reduce Motion** removes the 6 pt lift on the period change and leaves a cross-fade. The
   ruler still tracks the finger — direct manipulation is not animation.
 - Colour is never the only carrier of meaning; the `⌀` prefix, not a colour, signals the
