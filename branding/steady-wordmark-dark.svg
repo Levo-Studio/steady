@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="160" viewBox="0 0 700 160" role="img" aria-label="Steady">
+  <g transform="translate(10 80)">
+    <circle cx="70" cy="0" r="63" fill="none" stroke="#5fbcea" stroke-width="14.2"/>
+    <circle cx="70" cy="0" r="22.8" fill="#5fbcea"/>
+    <text x="196" y="0" dominant-baseline="central" fill="#f2f3f1"
+          font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+          font-size="150" font-weight="500" letter-spacing="-4.5">steady</text>
+  </g>
+</svg>

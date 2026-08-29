@@ -1,69 +1,273 @@
-<picture><source media="(prefers-color-scheme: dark)" srcset="branding/steady-mark-dark.png"><img src="branding/steady-mark-light.png" width="88" alt="Steady"></picture>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="branding/steady-wordmark-dark.svg">
+    <img src="branding/steady-wordmark-light.svg" alt="Steady" width="300">
+  </picture>
+</p>
 
-# Steady
+<p align="center">
+  Gewichtstrend statt Tageszahl · SwiftUI · iOS 26
+</p>
 
-The scale lies. The line doesn't.
+<p align="center">
+  <a href="docs/Steady%20-%20Case%20Studie%20Notes.md"><b>Fallstudie</b></a> ·
+  <a href="#die-rechnung">Die Rechnung</a> ·
+  <a href="#das-lineal">Das Lineal</a> ·
+  <a href="#gesundheitsdaten">Gesundheitsdaten</a> ·
+  <a href="#gestaltung">Gestaltung</a> ·
+  <a href="#bauen">Bauen</a>
+</p>
 
 ---
 
-Steady is an iOS weight logger. You drag a ruler to your weight, it saves to Apple Health, and it shows you one smoothed line. Two screens — Log and Trend. No settings screen, no history list, no account.
+Eine Waage-App, die die Zahl auf der Waage nicht für das Ergebnis hält — und die
+keinen Account will, nur um jeden Morgen vier Ziffern zu speichern.
 
-## Why it exists
+Das Körpergewicht schwankt an einem einzigen Tag um rund zwei Kilo: Salz,
+Kohlenhydrate, Wasser, Darminhalt. Wer tatsächlich abnimmt, verliert dabei etwa
+400 Gramm Fett pro Woche. Das Signal ist also rund fünfmal kleiner als das
+Rauschen, das darauf sitzt. Jede andere App zeichnet das Rauschen und überlässt
+das Filtern dem Nutzer — man hat alles richtig gemacht, die Zahl ist trotzdem
+gestiegen, und man muss sich das selbst ausreden. Genau da entsteht die
+Entmutigung.
 
-Body weight moves about two kilos in a single day on salt, carbohydrate, hydration and gut contents. Someone actually losing fat is losing around 400 g a week. So the signal is roughly five times smaller than the noise sitting on top of it.
+Steady filtert. Man zieht ein Lineal auf sein Gewicht, es landet in Apple Health,
+und zu sehen ist eine geglättete Linie. Zwei Bildschirme, **Log** und **Trend**.
+Keine Einstellungen, keine Verlaufsliste, kein Konto, keine Serie, die man
+verteidigen muss. Wiegen dauert vier Sekunden; die App soll auch vier Sekunden
+dauern.
 
-Every other weight app draws that noise and leaves the filtering to you. You did everything right, the number went up, and you have to talk yourself out of it — that is where the discouragement comes from. Steady does the filtering, so what you see is the part that means something.
+|  |  |
+|---|---|
+| **Trend** | EWMA mit α = 0,18 — Halbwertszeit 3,5 Tage, Schwerpunkt 4,6 Tage |
+| **Eingabe** | Ziehbares Lineal, 0,1 kg je Rasterschritt, ein Haptik-Tick pro Schritt |
+| **Speicher** | Ausschliesslich HealthKit — kein Backend, kein Konto, kein Netzwerkcode |
+| **Bildschirme** | Zwei, dazu neun Zustände. Kein Einstellungsbildschirm |
+| **Abhängigkeiten** | Keine. Kein SPM-Paket, kein CocoaPods |
+| **Lizenz** | Source-available — eigener Gebrauch ja, Weiterverkauf nein |
 
-The rest of the category has a second problem: it's bloated. Accounts to create, streaks to defend, ads between you and your own data, a subscription for a chart, and in a few cases a social feed. Weighing yourself takes four seconds. The app should take four seconds too.
+Warum die App so aussieht, wie sie aussieht — das Lineal statt eines Ziffernblocks,
+warum der Trend die 64-pt-Zahl bekommt und das heutige Gewicht nicht, warum es
+genau eine Akzentfarbe gibt und kein Grün für Abnahme — steht in der
+**[Fallstudie](docs/Steady%20-%20Case%20Studie%20Notes.md)**.
 
-## How the trend is calculated
+## Die Rechnung
 
-An exponentially weighted moving average with **α = 0.18**, run once over the whole history, oldest to newest. Ranges are sliced off the end of that one result, so a given day shows the same trend value on the month chart and the year chart.
+### Warum kein gleitender Durchschnitt
+
+Der naheliegende Weg wäre ein 7-Tage-Mittel. Er ist aus zwei konkreten Gründen
+schlechter.
+
+Er **gewichtet einen Messwert von vor sechs Tagen genauso stark wie den von heute
+Morgen**. Eine echte Richtungsänderung wird deshalb erst sichtbar, wenn sie das
+Fenster halb gefüllt hat — bei einem Menschen, der etwas verändert hat, fühlt sich
+das an, als sei die App kaputt.
+
+Und er **springt**. In dem Moment, in dem ein Ausreisser hinten aus dem Fenster
+fällt, hüpft der Durchschnitt. In der Linie steht dann ein sichtbarer Knick, dem
+im Leben des Nutzers nichts entspricht.
+
+### EWMA, α = 0,18
+
+Ein exponentiell gewichteter gleitender Durchschnitt hat beide Probleme nicht.
+Jeder neue Messwert schiebt die Linie um einen festen Anteil — sie ist stetig,
+und ihre Reaktion ist glatt.
 
 ```
 e[0] = v[0]
-e[i] = 0.18 * v[i] + 0.82 * e[i-1]
+e[i] = 0,18 · v[i] + 0,82 · e[i−1]
 ```
 
-That α gives the line a specific character. Its **half-life is about 3.5 days** — a genuine step change in weight is half absorbed after three and a half days and essentially complete inside two weeks. Its **centre of mass is about 4.6 days** — the line's memory is roughly the last five days of readings, weighted toward the recent ones. A one-off 1.5 kg salt spike moves the line by 0.27 kg and it decays from there: the reading shows up as a dot far off the line, and the line barely notices.
+α = 0,18 legt den Charakter der Linie fest:
 
-A plain 7-day rolling average was the obvious alternative and it is worse in two concrete ways. It weights a reading from six days ago exactly as heavily as this morning's, so it only reacts to a change of direction after that change has half-filled the window. And it steps — the moment an outlier falls out of the back of the window, the average jumps, putting a visible kink in the line that corresponds to nothing that happened to the person. An EWMA has neither problem. Every reading nudges the line by a fixed fraction, so it is continuous and its response is smooth.
+- **Halbwertszeit ln(0,5) / ln(0,82) ≈ 3,5 Tage.** Eine echte Gewichtsänderung ist
+  nach dreieinhalb Tagen zur Hälfte aufgenommen und nach zwei Wochen praktisch
+  vollständig.
+- **Schwerpunkt (1 − α) / α ≈ 4,6 Tage.** Das Gedächtnis der Linie reicht etwa
+  fünf Tage zurück, gewichtet zum Jüngeren hin.
+- Eine einmalige Salzspitze von 1,5 kg verschiebt die Linie um 0,18 · 1,5 =
+  **0,27 kg** und klingt von dort ab. Der Messwert steht als Punkt weit neben der
+  Linie, die Linie nimmt kaum Notiz.
 
-There are two deliberate exceptions, both corrections for what an EWMA does at the extremes of window length:
+Kleineres α (0,10) ergibt eine wunderschön ruhige Linie, die einen echten
+Durchbruch aber über eine Woche zu spät zeigt. Grösseres α (0,30) folgt so eng,
+dass die Linie genau das Rauschen erbt, dessentwegen es sie gibt. 0,18 ist der
+Wert, gegen den der freigegebene Entwurf gezeichnet wurde.
 
-- **Week** draws a least-squares straight-line fit through the seven readings. Over seven points an EWMA still carries most of the raw wobble, so a week chart would be two noisy lines communicating nothing. The fit gives the week the one thing worth knowing: which way it's going.
-- **Year** plots 52 weekly means and runs them through a second EWMA at α = 0.3. The input is already smooth, so a single pass would trace every dot; the second pass keeps the line calmer than the points it's drawn through.
+Der EWMA läuft **einmal über die gesamte Historie**, von alt nach neu. Die Bereiche
+werden hinten abgeschnitten, nicht je Bereich neu gerechnet — ein Tag zeigt im
+Monatschart denselben Trendwert wie im Jahreschart.
 
-## Data
+### Zwei Ausnahmen, beide Absicht
 
-HealthKit is the database. There is no local cache, no backend, no account, no analytics, no crash reporting, and no network code of any kind — the app works in airplane mode, forever. Steady reads and writes `bodyMass` and nothing else. A day collapses to one value, the earliest sample of that calendar day, because the product is about morning weight taken under consistent conditions. Deletes only ever touch samples Steady itself wrote; if today's reading came from a smart scale, Update works and Delete is disabled rather than silently failing.
+| Bereich | Punkte | Linie |
+|---|---|---|
+| Woche | letzte 7 Tageswerte | **Ausgleichsgerade** durch die sieben Messwerte |
+| Monat | letzte 30 Tageswerte | die EWMA-Reihe |
+| Jahr | 52 Wochenmittel | diese Mittel durch einen **zweiten EWMA, α = 0,3** |
 
-An App Intent means a Shortcut, Home Screen tile, Lock Screen button or the Action Button lands you straight on the Log screen with the ruler ready. A parameterised variant writes a reading without opening the UI at all.
+Beides korrigiert, was ein EWMA an den Enden der Fensterlänge tut. Über sieben
+Punkte trägt er noch fast das gesamte Rauschen — ein Wochenchart zeigte zwei
+zappelige Linien und sagte nichts. Die Gerade gibt der Woche das Einzige, was sich
+über sieben Tage seriös sagen lässt: die Richtung. Über ein Jahr ist es umgekehrt.
+Wochenmittel sind bereits so glatt, dass der EWMA jedem einzelnen folgte; der
+zweite Durchgang hält die Linie ruhiger als die Punkte, durch die sie gezeichnet
+ist.
 
-## Stack
+**Fehlende Tage werden nicht interpoliert.** Der EWMA läuft über die Messwerte, die
+es gibt, in Datumsreihenfolge. Eine Lücke lässt die Linie in Kalendertagen
+langsamer reagieren — das ist ehrlich. Ein Halbjahr ohne Messung ist kein Tag mit
+null Kilo.
 
-Swift 6 with strict concurrency, SwiftUI, HealthKit, App Intents. **Zero dependencies** — no SPM packages, no CocoaPods. iOS 26+. Charts are drawn by hand with `Canvas` and `Path` rather than Swift Charts, because the design specifies exact stroke widths, z-order and per-range dot radii, and hand-drawn geometry is deterministic.
+Referenzimplementierung: [`design/reference-weight.js`](design/reference-weight.js).
+Der Swift-Port muss sie exakt reproduzieren.
 
-## Build
+## Das Lineal
 
-Xcode is required. If it isn't your active developer directory, every build and test command needs the prefix:
+Die einzige Eingabe. **Kein Ziffernblock, kein Picker-Rad, kein Textfeld.**
 
-```sh
-export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
-xcodebuild -project Steady.xcodeproj -scheme Steady \
+Gewogen wird halb wach, einhändig, vor dem ersten Kaffee. Vier Zeichen zu tippen
+heisst, sie anschliessend zurückzulesen, um sie zu prüfen. Ein Zug landet mit einer
+Geste auf der richtigen Zahl und braucht keinen Kontrollblick. Der Preis: ein
+Sprung über mehrere Kilo dauert länger — was bei jemandem, der sich täglich wiegt,
+praktisch nie vorkommt.
+
+Die Geometrie kommt aus dem Entwurf und ist nicht verhandelbar: **25 Striche** im
+Abstand von **14,2 pt**, jeder fünfte lang. Die Nadel steht fest in der Mitte, das
+Band zieht darunter durch. Das sichtbare Fenster ist 2,4 kg breit und überspannt 24
+Intervalle — daraus folgt die einzige Konstante, die das Steuerelement braucht:
+
+```
+14,2 pt = 0,1 kg
+```
+
+Der Wert rastet immer auf 0,1 kg. Er wird nie feiner gehalten, angezeigt oder
+gespeichert. **Pro überfahrenem Rasterschritt feuert genau ein Haptik-Tick** —
+vorbereitet beim Start der Geste, ausgelöst beim Überschreiten, nie mehrmals für
+denselben Strich und niemals je Frame. Das ist das Detail, das aus einem Slider ein
+Instrument macht; ein Zug, der durchgehend vibriert, und einer, der gar nicht
+vibriert, wirken gleichermassen kaputt.
+
+Die Knöpfe **−** und **+** daneben schrittweise 0,1 kg, zum Nachjustieren nach dem
+Zug. Startwert ist der gestrige Messwert.
+
+## Gesundheitsdaten
+
+HealthKit **ist** die Datenbank. Kein lokaler Cache, kein Core Data, keine Kopie in
+`UserDefaults`. Kein Backend, kein Konto, keine Analytik, kein Crash-Reporting und
+kein Netzwerkcode — die App funktioniert dauerhaft im Flugmodus. Gelesen und
+geschrieben wird `bodyMass` in Kilogramm, sonst nichts.
+
+Drei Dinge, an denen man sich verletzt:
+
+**HealthKit sagt bei Lesezugriffen nicht die Wahrheit.** `authorizationStatus`
+liefert für einen Lesetyp `.sharingAuthorized`, auch wenn der Nutzer das Lesen
+abgelehnt hat — mit Absicht, damit Apps eine Ablehnung nicht erkennen können. Wer
+darauf verzweigt, zeigt jemandem mit zehn Jahren Messwerten ein leeres Diagramm.
+Der Zustand „kein Zugriff" wird deshalb nicht abgefragt, sondern aus einer leeren
+Abfrage bei gleichzeitig fehlender Schreibfreigabe erschlossen.
+
+**Ein Tag ist ein Wert**, und zwar der früheste Messwert des Kalendertags. Es geht
+um das Morgengewicht unter gleichen Bedingungen. Wer ein zweites Mal loggt,
+ersetzt — es entsteht kein zweiter Eintrag.
+
+**Gelöscht wird nur, was Steady selbst geschrieben hat.** Kommt der heutige Wert von
+einer Funkwaage, funktioniert *Aktualisieren*, *Löschen* ist deaktiviert. Ein
+Knopf, der still fehlschlägt, ist schlimmer als ein Knopf, den es nicht gibt.
+
+Ein App Intent bringt Shortcut, Home-Bildschirm, Sperrbildschirm und Actionbutton
+direkt auf den Log-Bildschirm, Lineal bereit. Eine parametrisierte Variante
+schreibt einen Wert, ohne die Oberfläche überhaupt zu öffnen.
+
+Ein Gewicht wird **nie** protokolliert — nicht in `os_log`, nicht in einem
+vergessenen `print`. Das sind Gesundheitsdaten.
+
+## Gestaltung
+
+Massgeblich ist [`design/steady-design-reference.md`](design/steady-design-reference.md).
+Jede Zahl darin ist wörtlich gemeint. Sie stammt aus dem freigegebenen Entwurf,
+nicht aus einer Interpretation davon.
+
+Ein Abstandsraster, Basis 14, jeder Schritt ×1,68: **5 · 8 · 14 · 24 · 40 · 67**.
+Radien 28, 24 und Pille. Helvetica Neue in genau zwei Schnitten, Tracking negativ
+und mit der Grösse wachsend. Jede Ziffer, die sich zur Laufzeit ändert, steht in
+Tabellenziffern — ohne das zappelt das Layout beim Zählen, und das ist die
+sichtbarste Art, diesen Entwurf falsch zu bauen.
+
+**Eine Akzentfarbe.** Blau heisst „bedienbar" oder „das ist der Trend". Kein Grün
+für Abnahme, kein Rot für Zunahme. Gewicht farbig zu codieren macht aus einer
+Messung ein Urteil, und nach oben ist kein Versagen, wenn man für Kraftaufbau die
+Makros anpasst.
+
+Die Akzente sind in **OKLCH** gesetzt, nicht in Hex, damit hell und dunkel
+wahrnehmungsgleich bleiben. Und die Textfarbe auf dem Akzent ist im Dunkelmodus
+**nicht** Weiss, sondern das fast schwarze `#0a1015` — der dunkle Akzent ist ein
+helles Blau. Hell und Dunkel folgen ausschliesslich dem System. Es gibt keinen
+Umschalter, weil es keine Einstellungen gibt.
+
+## Architektur
+
+```
+Steady/
+  Theme/         Palette, Typografie, Masse — die einzige Quelle für Farbe und Abstand
+  Model/         TrendEngine, ChartGeometry — reine Werte, kein UI, kein HealthKit
+  Health/        HealthService — die einzige Datei, die HealthKit importiert
+  Features/      ein Ordner je Bildschirm, dazu Shared
+  Intents/       App Intents für Shortcuts
+design/          Entwurfsreferenz und Referenzimplementierung der Rechnung
+```
+
+**Der Rechenkern kennt keine Datenbank.** `TrendEngine` und `ChartGeometry`
+arbeiten auf reinen Werten. Deshalb lässt sich der EWMA gegen von Hand gerechnete
+Zahlen testen — ohne Simulator, ohne Gesundheitsdatenbank, in Millisekunden.
+
+**Keine Ansicht importiert HealthKit.** Alles läuft über `HealthService` hinter
+einem Protokoll, damit der Speicher im Test ersetzbar ist.
+
+**Die Diagramme sind von Hand gezeichnet**, mit `Canvas` und `Path` statt Swift
+Charts. Der Entwurf schreibt Strichstärken, Zeichenreihenfolge und je Bereich
+unterschiedliche Punktradien vor. Von Hand gezeichnete Geometrie ist
+deterministisch und überlebt das nächste OS-Update.
+
+## Bauen
+
+Vorausgesetzt ist Xcode 26. `xcode-select` zeigt auf vielen Rechnern auf die
+CommandLineTools — die können kein iOS-Projekt bauen. Entweder dauerhaft umstellen
+(`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`) oder je Aufruf
+voranstellen:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project Steady.xcodeproj -scheme Steady \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
-HealthKit needs somewhere real to read from — a physical device, or a simulator you've seeded with body mass data. On first launch the app asks for read and write access on body mass; without it you get the access-off state instead of a chart.
+HealthKit braucht etwas zum Lesen — ein echtes Gerät oder einen Simulator, in den
+man Gewichtsdaten eingetragen hat. Beim ersten Start fragt die App Lese- und
+Schreibzugriff auf `bodyMass` an; ohne sie erscheint der Zustand „kein Zugriff"
+statt eines Diagramms.
 
-New Swift files under `Steady/` are picked up automatically by the project's synchronized file group. Never hand-edit `project.pbxproj` to add a source file.
+Das Projekt nutzt synchronisierte Ordner — neue Dateien unter `Steady/` landen ohne
+Zutun im Target. **`project.pbxproj` wird nicht von Hand um Quelldateien
+ergänzt.**
 
-## Case study
+## Credits
 
-The design decisions — the ruler instead of a keypad, why the trend gets the 64 pt numeral and today's reading doesn't, one accent colour and no green-for-loss — are written up in [docs/Steady - Case Studie Notes.md](docs/Steady%20-%20Case%20Studie%20Notes.md).
+**Creator und Maintainer**
 
-## Licence
+[**Julius Grimm**](https://github.com/justthatrandomcoder) — Idee, Design,
+Rechenkern, App Store. [Levo Studio](https://levo-studio.com)
 
-Source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+## Lizenz
 
-Read the code, learn from it, run it, modify it for your own personal or non-commercial use. What you may not do is sell it, relicense it, sublicense it, or repackage it as someone else's product or service. Steady stays the property and the product of Levo Studio.
+Source-available. Der Code ist offen: lesen, klonen, ändern, selbst bauen, auf den
+eigenen Geräten benutzen — privat und nichtkommerziell, so weit man mag.
+
+Nicht erlaubt sind Verkauf und jede entgeltliche Weitergabe, Unterlizenzierung, das
+Umlizenzieren unter andere Bedingungen und das Neuverpacken als fremdes Produkt oder
+fremder Dienst. Steady ist und bleibt ein Produkt von Levo Studio.
+
+Der vollständige Text steht in [`LICENSE`](LICENSE) — PolyForm Noncommercial
+License 1.0.0.
+
+© 2026 Levo Studio
