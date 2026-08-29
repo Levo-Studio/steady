@@ -17,10 +17,22 @@ struct TrendHeader: View {
     /// headline is a placeholder, not a value.
     let isEmpty: Bool
 
+    /// Design reference §7.8: the value and its unit sit `6` apart on a shared
+    /// baseline. It is the only 6 in this feature that is not the tab-bar or
+    /// period-control gap, and it has no `Metrics` token yet — `Theme/` is not
+    /// this feature's to extend, so it is named here rather than left as a
+    /// literal at the call site.
+    private static let headlineUnitGap: CGFloat = 6
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Metrics.space3) {
+        // §7.8 says `space-between`, which is a *zero* minimum gap, not a
+        // floor. A spacing plus a `minLength` forced 36 pt between the headline
+        // and the badge; because the badge is `.fixedSize()` all of it landed on
+        // the 64 pt figure, which truncated at 393 pt — the most common iPhone
+        // width — and at every width with a three-digit weight.
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
             headline
-            Spacer(minLength: Metrics.space2)
+            Spacer()
             badge
         }
         .accessibilityElement(children: .combine)
@@ -32,7 +44,7 @@ struct TrendHeader: View {
                 .steadyTextStyle(.cardLabel)
                 .foregroundStyle(Palette.mut)
 
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: Self.headlineUnitGap) {
                 Text(summary.headline)
                     .steadyTextStyle(.trendHeadline)
                     .foregroundStyle(isEmpty ? Palette.mut : Palette.ink)
