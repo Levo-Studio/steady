@@ -73,6 +73,14 @@ nonisolated enum Metrics {
     /// The check circle on the already-logged state.
     static let checkCircleDiameter: CGFloat = 56
 
+    // MARK: - Onboarding hero (design reference §7.1)
+
+    /// The accent curve through the hero's dots. Numerically the same as the
+    /// chart's `trendLineWidth`, deliberately kept separate: the hero is §7.1
+    /// and the trend polyline is §7.8, and a change to one must not move the
+    /// other.
+    static let heroCurveWidth: CGFloat = 5
+
     // MARK: - Screen padding (design reference §1)
 
     /// `70` top, `24` sides, `40` bottom.

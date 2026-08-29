@@ -13,6 +13,14 @@ import SwiftUI
 /// Authored at `306 × 104`. Every coordinate below is literal at that size and
 /// the whole drawing scales uniformly with the container, so the curve keeps its
 /// relationship to the dots at any width.
+///
+/// It sits **flush left**. In the source the wrapper is `margin: 40px 0 auto`
+/// — the horizontal margins are zero — inside a flex column with no
+/// `text-align`, so the `306`-wide drawing hangs off the leading edge of the
+/// content column and the slack is trailing. At the authored `402` pt width the
+/// column is `354`, so there is `48` pt of slack on the right and none on the
+/// left. Narrower than `306` and the drawing scales down to fit; wider and it
+/// stays `306`.
 struct OnboardingHeroGraphic: View {
 
     /// The size the design reference specifies, and the coordinate space every
@@ -65,12 +73,12 @@ struct OnboardingHeroGraphic: View {
             context.stroke(
                 Self.curve,
                 with: .color(Palette.ac),
-                style: StrokeStyle(lineWidth: Metrics.trendLineWidth, lineCap: .round)
+                style: StrokeStyle(lineWidth: Metrics.heroCurveWidth, lineCap: .round)
             )
         }
         .aspectRatio(Self.designSize.width / Self.designSize.height, contentMode: .fit)
         .frame(maxWidth: Self.designSize.width)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement()
         .accessibilityAddTraits(.isImage)
         .accessibilityLabel("Scattered daily readings with one smooth line drawn through them")
