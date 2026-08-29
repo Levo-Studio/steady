@@ -66,8 +66,13 @@ struct WeightRuler: View {
         TickStrip(value: renderValue)
             .frame(height: Metrics.rulerStripHeight)
             .overlay(alignment: .center) { needle }
+            // The strip is 40 pt tall, under the 44 pt minimum, so the grab
+            // area is opened up by 8 either side and the layout is put back
+            // where it was. Nothing moves; the ruler is simply easier to catch.
+            .padding(.vertical, Metrics.space2)
             .contentShape(.rect)
             .gesture(drag)
+            .padding(.vertical, -Metrics.space2)
     }
 
     /// Fixed at the horizontal centre, overhanging the strip by `8` at the top.
