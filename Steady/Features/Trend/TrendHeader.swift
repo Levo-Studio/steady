@@ -104,8 +104,14 @@ struct PeriodEntrance: ViewModifier {
     let lift: CGFloat
 
     func body(content: Content) -> some View {
+        // The initial value is the *settled* state, not the start of the
+        // animation: a keyframe animator driven by a trigger holds its initial
+        // value until the trigger first changes, so starting at zero opacity
+        // would leave the headline invisible until the user touched the period
+        // control. Each run jumps to the start of the entrance with a
+        // `MoveKeyframe` and interpolates back from there.
         KeyframeAnimator(
-            initialValue: Phase(opacity: 0, lift: lift),
+            initialValue: Phase(opacity: 1, lift: 0),
             trigger: token
         ) { phase in
             content
@@ -113,6 +119,7 @@ struct PeriodEntrance: ViewModifier {
                 .offset(y: phase.lift)
         } keyframes: { _ in
             KeyframeTrack(\.opacity) {
+                MoveKeyframe(0)
                 LinearKeyframe(
                     1,
                     duration: Metrics.periodChangeDuration,
@@ -120,6 +127,7 @@ struct PeriodEntrance: ViewModifier {
                 )
             }
             KeyframeTrack(\.lift) {
+                MoveKeyframe(lift)
                 LinearKeyframe(
                     0,
                     duration: Metrics.periodChangeDuration,
