@@ -15,7 +15,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 |---|---|---|---|---|---|
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
 | 1 | Onboarding screens | B | *(closed)* | `feat/onboarding-screen` | **merged** |
-| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | fixes done, re-reviewing |
+| 2 | Log screen — ruler + stepper, HealthKit write | B | *(closed)* | `feat/log-screen` | **merged** |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | fixing (resumed after API limit) |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
@@ -280,3 +280,17 @@ accessState)`.
   fix must keep `sizeThatFits` returning `lines × lineBox` and change only the
   wrapping/measurement path — if it starts reporting the font's natural height instead, that
   button silently becomes ~46 pt and the 24/40 gaps shift by 1.2 pt.
+
+- **Feature 2 (Log) merged to `main` and pushed.** Re-review failed it on one constant and the
+  orchestrator fixed it directly: `headerTargetInset` was 13, which gives a 41 pt hit area,
+  not 44. The estimate it was based on — STEADY.md §11's "~18 pt" for a text label — does not
+  hold in this codebase, because `LineBoxRenderer` reports `lines × lineBox`, so a 15/1 label
+  measures exactly 15. `(44 − 15) / 2 = 14.5`.
+- Also fixed while there: the tick strip collapsed at the clamp. `kilograms(forTick:)` routed
+  through `snap`, which clamps, so at 20.0 kg every index below the floor returned 20.0 and
+  drew at offset 0 — a dozen strokes stacked under the needle with half the strip blank.
+  **The clamp belongs to the value, not to the drawing.** Removing it from `bounds(at:)` too
+  reverses an earlier review's request, and deliberately: the needle is always centred, so a
+  clamped end-point claimed the edge of the strip held the value the centre was already
+  showing. That earlier "fix" was wrong.
+- Feature 3 (Trend) finished its fixes including the failed-read blocker; sent for re-review.
