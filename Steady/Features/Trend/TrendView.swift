@@ -33,7 +33,7 @@ struct TrendView: View {
                     readings: store.readings,
                     trend: store.trend
                 ),
-                isEmpty: isEmpty,
+                isEmpty: state.showsPlaceholders,
                 onEditToday: editToday
             )
             .padding(.top, Metrics.space3)
@@ -63,7 +63,10 @@ struct TrendView: View {
 
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TrendHeader(summary: store.summary(for: period), isEmpty: isEmpty)
+            TrendHeader(
+                summary: store.summary(for: period),
+                isEmpty: state.showsPlaceholders
+            )
                 .periodEntrance(token: entranceToken, lift: lift)
 
             chart
@@ -81,22 +84,34 @@ struct TrendView: View {
 
     @ViewBuilder
     private var chart: some View {
-        if isEmpty {
-            TrendChartEmptyState()
-        } else {
+        switch state {
+        case .ready:
             TrendChart(series: store.series(for: period), period: period)
                 // The chart re-draws on the same 0.34s timing as the headline.
                 // It carries the cross-fade only: the design lifts the headline
                 // block and the badge, not the drawing.
                 .periodEntrance(token: entranceToken, lift: 0)
+        case .loading:
+            TrendChartLoadingState()
+        case .empty, .readFailed, .accessOff:
+            TrendChartEmptyState(state: state)
         }
     }
 
     // MARK: - State
 
-    /// The empty start is about having no readings, not about having no access —
-    /// §7.9 shows the same chart a user with history would see, plus a banner.
-    private var isEmpty: Bool { !store.hasReadings }
+    /// Which of the screen's shapes is on. The decision itself lives in
+    /// `TrendScreenState` so it can be tested — asking `!store.hasReadings`
+    /// here conflated three different absences, and told a user whose read had
+    /// just failed that their line had not started yet.
+    private var state: TrendScreenState {
+        TrendScreenState.resolve(
+            hasLoaded: store.hasLoaded,
+            failure: store.failure,
+            hasReadings: store.hasReadings,
+            accessState: store.accessState
+        )
+    }
 
     private var showsAccessBanner: Bool { store.accessState == .off }
 

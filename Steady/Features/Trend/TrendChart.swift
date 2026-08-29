@@ -128,13 +128,22 @@ struct TrendChart: View {
 
 // MARK: - Empty start
 
-/// What stands in for the chart before the first reading exists,
+/// What stands in for the chart when there is no line to draw,
 /// per design reference §7.3.
 ///
 /// The copy sits at the *top* of the 140 pt box and a single dashed baseline
 /// runs across the full width at `y = 118`, so the card keeps the height and the
 /// shape it will have once there is a line to draw.
+///
+/// §7.3's wording — "your line starts after the first weigh-in" — is a claim
+/// about the user's history, so it is only ever shown for `.empty`. When the
+/// read failed or access is off the history is unknown rather than absent, and
+/// the box says exactly that instead.
 struct TrendChartEmptyState: View {
+
+    /// Which absence is being explained. Only `.empty`, `.readFailed` and
+    /// `.accessOff` reach here.
+    var state: TrendScreenState = .empty
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -160,19 +169,56 @@ struct TrendChartEmptyState: View {
                 .offset(y: Metrics.emptyBaselineY - Metrics.rawLineWidth / 2)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            "Your line starts after the first weigh-in. Give it a week and it will mean something."
-        )
+        .accessibilityLabel(spokenCopy)
     }
 
-    /// Two words carry the emphasis: the thing that has to happen is `ink`,
-    /// and how long it takes is `ac`.
+    /// Two words carry the emphasis in each variant: the thing that has to
+    /// happen is `ink`, and what resolves it is `ac`.
     private var copy: Text {
-        Text("Your line starts after the ")
-            + Text("first weigh-in").foregroundStyle(Palette.ink)
-            + Text(". Give it ")
-            + Text("a week").foregroundStyle(Palette.ac)
-            + Text(" and it will mean something.")
+        switch state {
+        case .readFailed:
+            Text("Apple Health could not be read. Your readings are ")
+                + Text("not gone").foregroundStyle(Palette.ink)
+                + Text(" — the line comes back ")
+                + Text("as soon as Steady can see them").foregroundStyle(Palette.ac)
+                + Text(".")
+        case .accessOff:
+            Text("With Apple Health access off, Steady ")
+                + Text("cannot see your readings").foregroundStyle(Palette.ink)
+                + Text(". Choose ")
+                + Text("Allow").foregroundStyle(Palette.ac)
+                + Text(" below and the line comes back.")
+        case .loading, .ready, .empty:
+            Text("Your line starts after the ")
+                + Text("first weigh-in").foregroundStyle(Palette.ink)
+                + Text(". Give it ")
+                + Text("a week").foregroundStyle(Palette.ac)
+                + Text(" and it will mean something.")
+        }
+    }
+
+    /// The same sentence without the colour, for VoiceOver.
+    private var spokenCopy: String {
+        switch state {
+        case .readFailed:
+            "Apple Health could not be read. Your readings are not gone — the line comes back as soon as Steady can see them."
+        case .accessOff:
+            "With Apple Health access off, Steady cannot see your readings. Choose Allow below and the line comes back."
+        case .loading, .ready, .empty:
+            "Your line starts after the first weigh-in. Give it a week and it will mean something."
+        }
+    }
+}
+
+/// The 140 pt box before the first read has come back: the card keeps its
+/// height and says nothing, because nothing is known yet.
+struct TrendChartLoadingState: View {
+
+    var body: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: Metrics.chartHeight)
+            .accessibilityHidden(true)
     }
 }
 
@@ -186,6 +232,8 @@ private struct HorizontalRule: Shape {
     }
 }
 
+#if DEBUG
+
 // MARK: - Previews
 
 #Preview("Light") {
@@ -198,7 +246,9 @@ private struct HorizontalRule: Shape {
                 period: period
             )
         }
-        TrendChartEmptyState()
+        TrendChartEmptyState(state: .empty)
+        TrendChartEmptyState(state: .readFailed)
+        TrendChartEmptyState(state: .accessOff)
     }
     .padding(Metrics.space4)
     .background(Palette.sur)
@@ -215,9 +265,13 @@ private struct HorizontalRule: Shape {
                 period: period
             )
         }
-        TrendChartEmptyState()
+        TrendChartEmptyState(state: .empty)
+        TrendChartEmptyState(state: .readFailed)
+        TrendChartEmptyState(state: .accessOff)
     }
     .padding(Metrics.space4)
     .background(Palette.sur)
     .preferredColorScheme(.dark)
 }
+
+#endif
