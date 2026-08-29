@@ -13,6 +13,10 @@ import SwiftUI
 /// There is no navigation stack here on purpose. Edit is a state of Log, not a
 /// pushed screen, so the tab bar stays live underneath it and Shortcuts routes
 /// through the same state the tab bar drives.
+///
+/// Nothing resets on a tab change because nothing survives one: `RootView`
+/// switches on `router.tab` and this view is destroyed and rebuilt, taking its
+/// state with it.
 struct LogView: View {
 
     @Binding var selectedTab: RootTab
@@ -27,15 +31,41 @@ struct LogView: View {
     /// screen does not flip back to "Logged for today" under the user's finger.
     @State private var showsEntryOverToday = false
 
+    /// Which of the three screens is showing. Derived, never stored — the
+    /// state is the readings plus the two flags, and a second copy of it would
+    /// only be a second thing to keep in step.
+    private enum Screen: Equatable {
+        case entry, logged, edit
+    }
+
+    private var screen: Screen {
+        if store.todayReading == nil { return .entry }
+        if isEditing { return .edit }
+        return showsEntryOverToday ? .entry : .logged
+    }
+
     var body: some View {
         content
-            .task { consumeRoutingRequest() }
+            .task {
+                // Arriving on Log is a state transition too, so a message left
+                // over from Trend does not follow the user here.
+                store.clearFailure()
+                consumeRoutingRequest()
+            }
             .onChange(of: router.wantsLogEntry) { _, _ in consumeRoutingRequest() }
-            .onChange(of: selectedTab) { _, _ in
-                // Leaving the tab abandons the edit rather than parking a
-                // half-finished screen behind the Trend tab.
-                isEditing = false
-                showsEntryOverToday = false
+            .onChange(of: screen) { _, _ in
+                // A failure line is the answer to the last command. Moving to
+                // a different screen asks a different question, so the old
+                // answer goes rather than persisting until the next write.
+                store.clearFailure()
+            }
+            .onChange(of: store.todayReading == nil) { _, isGone in
+                // An external delete — Health, another app — pulls today's
+                // reading out from under Edit. The view already falls through
+                // to the ruler, but the flag has to go with it, or the next
+                // external write for today would drop the user straight back
+                // into Edit instead of "Logged for today".
+                if isGone { isEditing = false }
             }
     }
 
