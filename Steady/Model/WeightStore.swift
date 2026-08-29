@@ -23,6 +23,10 @@ nonisolated enum WeightStoreFailure: Equatable, Sendable {
     case saveFailed
     /// The reading could not be removed. Usually another source owns it.
     case deleteFailed
+    /// The readings could not be read back. Distinct from having none, because
+    /// the empty-start screen would otherwise claim a history that exists is
+    /// absent.
+    case readFailed
 
     /// What the Log screen puts on screen. Plain and factual, per the
     /// product's voice.
@@ -31,6 +35,7 @@ nonisolated enum WeightStoreFailure: Equatable, Sendable {
         case .authorizationFailed: "Apple Health access could not be granted."
         case .saveFailed: "Apple Health did not accept the entry."
         case .deleteFailed: "Apple Health did not remove the entry."
+        case .readFailed: "Apple Health could not be read."
         }
     }
 }
@@ -120,7 +125,16 @@ final class WeightStore {
 
     func refresh() async {
         accessState = await health.accessState()
-        readings = (try? await health.readDailyReadings()) ?? []
+        do {
+            readings = try await health.readDailyReadings()
+            failure = nil
+        } catch {
+            // A failed read must not look like an empty history: the Trend
+            // screen would render the empty-start state and quietly claim the
+            // user has never weighed in.
+            readings = []
+            failure = .readFailed
+        }
         trend = TrendEngine.trend(for: values)
         hasLoaded = true
     }
