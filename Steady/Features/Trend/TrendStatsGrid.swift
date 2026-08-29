@@ -59,6 +59,14 @@ struct TrendStatsGrid: View {
                 .accessibilityValue(spoken(perWeekValue))
             }
         }
+        // Each cell asks for `maxHeight: .infinity` so it fills its row and the
+        // dividers run the full height. That also makes the whole grid a
+        // vertically *flexible* child, and the `Spacer()` under it in `TrendView`
+        // is flexible too — so a `VStack` split the screen's slack between them
+        // and the grid stretched from the `111` pt rows §7.8 specifies to `156`,
+        // swallowing 91 pt that belongs to the spacer. The cells keep their
+        // stretch inside the grid; the grid itself takes its ideal height.
+        .fixedSize(horizontal: false, vertical: true)
         .background(Palette.sur, in: .rect(cornerRadius: Metrics.radiusStatsGrid))
     }
 
@@ -79,7 +87,7 @@ struct TrendStatsGrid: View {
                 cell(label: "Today", value: value)
                     .contentShape(.rect)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .accessibilityLabel("Today")
             .accessibilityValue(spoken(value))
             .accessibilityHint("Opens today’s entry")
@@ -100,9 +108,21 @@ struct TrendStatsGrid: View {
             Text(label)
                 .steadyTextStyle(.cardLabel)
                 .foregroundStyle(Palette.mut)
+                // The fourth cell's label changes with the range, so it
+                // cross-fades rather than swapping. §9 keeps cross-fades under
+                // Reduce Motion.
+                .contentTransition(.opacity)
             Text(value)
                 .steadyTextStyle(style)
-                .foregroundStyle(isEmpty ? Palette.mut : colour)
+                .foregroundStyle(colour)
+                // §9: a stat value changing because the user changed the range
+                // rolls its digits with `settle`.
+                .contentTransition(.numericText())
+                // §7.3's em dash, on the numerals' optical centre-line rather
+                // than the eight points below it the glyph is drawn at. The
+                // populated cell is untouched: same 36 / 40 pt line box, same
+                // `14` pt gap under the label.
+                .valuePlaceholder(value == "—", style: style)
                 .padding(.top, Metrics.space3)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
