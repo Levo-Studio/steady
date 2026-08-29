@@ -21,6 +21,14 @@ struct RootView: View {
 
     static let onboardingCompleteKey = "steady.onboardingComplete"
 
+    /// The tab bar's pill lives here rather than inside `TabBar`, because the
+    /// screen below the tab bar is rebuilt on every tab change and a namespace
+    /// declared inside the control would die with it. Held at the root, the
+    /// outgoing pill and the incoming one are recognised as the same view and
+    /// `matchedGeometryEffect` slides between them — design reference §9 calls
+    /// that the most important animation in the app.
+    @Namespace private var tabPillNamespace
+
     var body: some View {
         @Bindable var router = router
 
@@ -38,6 +46,7 @@ struct RootView: View {
                 OnboardingFlowView { onboardingComplete = true }
             }
         }
+        .environment(\.tabPillNamespace, tabPillNamespace)
         .task {
             await store.refresh()
         }
