@@ -14,8 +14,9 @@ import Foundation
 /// to switch units, so there is no unit on this type to get wrong.
 nonisolated struct WeightSample: Identifiable, Hashable, Sendable {
 
-    /// The HealthKit sample's UUID. `nil` for a value that has not been
-    /// written yet.
+    /// The HealthKit sample's UUID. A sample that has not been written yet
+    /// carries a fresh UUID rather than none, so the type stays `Identifiable`
+    /// without an optional identity to branch on.
     let id: UUID
 
     /// The sample's start date — the moment the reading was taken.
