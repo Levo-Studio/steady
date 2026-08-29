@@ -32,6 +32,16 @@ struct SteadyShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
+            intent: EditTodayIntent(),
+            phrases: [
+                "Edit today's weight in \(.applicationName)",
+                "Change my weight in \(.applicationName)"
+            ],
+            shortTitle: "Edit Today",
+            systemImageName: "pencil"
+        )
+
+        AppShortcut(
             intent: SaveWeightIntent(),
             phrases: [
                 "Save weight to \(.applicationName)",
