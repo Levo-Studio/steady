@@ -26,7 +26,7 @@ nonisolated enum LogMetrics {
     /// stack. "Cancel" and "Delete" are ~18 pt tall, so 13 either side reaches
     /// 44; the same inset is then removed from the button's layout box so the
     /// header keeps the height the design draws.
-    static let headerTargetInset: CGFloat = 13
+    static let headerTargetInset: CGFloat = 14.5
 }
 
 // MARK: - Screen padding
