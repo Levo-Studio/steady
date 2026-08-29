@@ -24,6 +24,10 @@ struct TrendHeader: View {
     /// literal at the call site.
     private static let headlineUnitGap: CGFloat = 6
 
+    /// How far the `64` pt figure may shrink before the row would overflow.
+    /// See the comment at the call site for where the number comes from.
+    private static let headlineMinimumScale: CGFloat = 0.45
+
     var body: some View {
         // §7.8 says `space-between`, which is a *zero* minimum gap, not a
         // floor. A spacing plus a `minLength` forced 36 pt between the headline
@@ -48,6 +52,19 @@ struct TrendHeader: View {
                 Text(summary.headline)
                     .steadyTextStyle(.trendHeadline)
                     .foregroundStyle(isEmpty ? Palette.mut : Palette.ink)
+                    // The design is authored at 402 pt and §1 requires it to
+                    // hold down to 320. A true `space-between` is enough for a
+                    // two-digit weight from 375 up, but not below it and not
+                    // for a three-digit one: at 320 the Week row wants 302 pt
+                    // of an available 224. The badge is the row's only other
+                    // element and truncating it would eat the number in it, so
+                    // the figure is what gives — STEADY.md §11 already caps the
+                    // display numerals rather than letting them break the
+                    // layout. The floor is the worst real case: a 320 pt screen
+                    // with a three-digit weight needs the numeral at 0.47 of
+                    // its authored width.
+                    .lineLimit(1)
+                    .minimumScaleFactor(Self.headlineMinimumScale)
                 Text("kg")
                     .steadyTextStyle(.trendHeadlineUnit)
                     .foregroundStyle(Palette.mut)
