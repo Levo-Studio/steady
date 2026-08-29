@@ -7,3 +7,14 @@ DerivedData/
 .env
 .env.*
 !.env.example
+
+# Local-only debug seeder. Fills Apple Health in the simulator so the Trend
+# screen can be looked at with real data. Deliberately never committed.
+#
+# It also needs two small hooks in RootView.swift and WeightStore.swift, which
+# are tracked files and so cannot be ignored. Those local edits are held out of
+# the index with:
+#   git update-index --skip-worktree Steady/RootView.swift Steady/Model/WeightStore.swift
+# To undo that (before editing either file for real):
+#   git update-index --no-skip-worktree Steady/RootView.swift Steady/Model/WeightStore.swift
+Steady/Features/Shared/SampleDataSeeder.swift
