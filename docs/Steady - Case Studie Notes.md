@@ -164,3 +164,37 @@ collapse to zero inside a scroll view, and the design's evenly-split column woul
 top-packed the moment the threshold was crossed — a visible jolt at a boundary the user does
 not know exists. With it, the first accessibility size measures exactly the display height
 with nothing to scroll: the same layout, byte for byte, with an inert scroll view around it.
+
+### The ruler, and what a clamp is actually for
+
+The ruler is the product's one real interaction, so it got the most attention and produced
+the most instructive mistakes.
+
+It began as a strip that tracked the finger continuously while the value snapped to 0.1 kg —
+which left the strip resting between ticks and needed an easing animation to settle it onto
+the nearest one when you let go. That animation was the tell. The design's motion section
+enumerates exactly four movements in the entire product, and a settle is a fifth. The fix was
+not to shorten it or gate it behind Reduce Motion but to remove the thing that required it:
+the strip is detented. The tick under the needle is always aligned to it, during the drag and
+after it, so there is no in-between position to settle from. That is also the better control.
+A ruler that lands on each tick, visibly and haptically, feels like an instrument. A ruler
+that glides and then tidies itself up feels like a slider with a vibration bolted on.
+
+The haptic has its own rule that only becomes obvious once you build it: one tick per 0.1 kg
+crossed, and at most one per frame. A fast flick can cross five ticks between two frames, and
+firing five impacts into a single frame does not read as five detents — it reads as a buzz,
+which is precisely the failure the per-tick rule exists to prevent. The decision was extracted
+into a pure value type so it could be tested by replaying whole gestures frame by frame and
+counting: zero over sixty still frames, exactly ten across ten ticks, six for a three-tick
+out-and-back, zero while pinned against the clamp.
+
+The best mistake was about the clamp. Weights are clamped to a plausible 20–400 kg, and that
+clamp had been applied to the *drawing* as well as the value — so at 20.0 kg every tick below
+the floor collapsed onto the needle, a dozen strokes stacked on top of each other with half
+the strip blank. A review had even asked for the end labels to be clamped the same way, and
+that request was wrong: the needle is always centred, so a clamped end-point claims the edge
+of the strip holds a value the centre is already showing.
+
+The rule that resolves it is worth stating plainly, because it generalises: **the clamp
+belongs to the value, not to the drawing.** A ruler does not stop being a ruler past the last
+reading you are allowed to select. It simply stops moving.
