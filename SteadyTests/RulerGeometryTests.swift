@@ -163,6 +163,14 @@ struct RulerGeometryTests {
         #expect(TrendEngine.format(ends.lower, decimals: 1) == "71.2")
         #expect(TrendEngine.format(ends.upper, decimals: 1) == "73.6")
     }
+
+    @Test("The labels are clamped to the plausible range")
+    func boundsAreClamped() {
+        let low = RulerGeometry.bounds(at: WeightSample.plausibleRange.lowerBound)
+        #expect(low.lower == WeightSample.plausibleRange.lowerBound)
+        let high = RulerGeometry.bounds(at: WeightSample.plausibleRange.upperBound)
+        #expect(high.upper == WeightSample.plausibleRange.upperBound)
+    }
 }
 
 /// The haptic contract, expressed as the thing that decides it.

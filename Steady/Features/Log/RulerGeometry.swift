@@ -93,10 +93,17 @@ nonisolated enum RulerGeometry {
 
     // MARK: - Labels
 
-    /// The visible range end-points printed under the strip: `value ∓ 1.2`.
+    /// The visible range end-points printed under the strip: `value ∓ 1.2`,
+    /// held inside the plausible range.
+    ///
+    /// The clamp matters at the ends of the range: at `20.0` an unclamped left
+    /// label would read `18.8`, a weight the ruler cannot reach.
     static func bounds(at value: Double) -> (lower: Double, upper: Double) {
         let centre = clamp(value)
-        return (centre - Metrics.rulerHalfWindow, centre + Metrics.rulerHalfWindow)
+        return (
+            clamp(centre - Metrics.rulerHalfWindow),
+            clamp(centre + Metrics.rulerHalfWindow)
+        )
     }
 }
 
