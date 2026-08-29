@@ -14,7 +14,7 @@ struct TrendView: View {
 
     @Environment(WeightStore.self) private var store
     @Environment(AppRouter.self) private var router
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.motion) private var motion
 
     @State private var period: Period = .week
 
@@ -89,11 +89,14 @@ struct TrendView: View {
     private var chart: some View {
         switch state {
         case .ready:
-            TrendChart(series: store.series(for: period), period: period)
-                // The chart re-draws on the same 0.34s timing as the headline.
-                // It carries the cross-fade only: the design lifts the headline
-                // block and the badge, not the drawing.
-                .periodEntrance(token: entranceToken, lift: 0)
+            // §9: the chart draws itself in rather than cross-fading. The
+            // token replays it on every range tap, including a tap on the
+            // range that is already showing.
+            TrendChart(
+                series: store.series(for: period),
+                period: period,
+                redrawToken: entranceToken
+            )
         case .loading:
             TrendChartLoadingState()
         case .empty, .readFailed, .accessOff:
@@ -120,7 +123,7 @@ struct TrendView: View {
 
     /// Reduce Motion drops the translate and keeps the cross-fade.
     private var lift: CGFloat {
-        reduceMotion ? 0 : Metrics.periodChangeLift
+        motion.lift(Motion.periodChangeLift)
     }
 
     // MARK: - Actions
@@ -129,7 +132,7 @@ struct TrendView: View {
     /// is the app's single navigation path — the Log feature owns the screen
     /// itself.
     private func editToday() {
-        router.routeToLogEntry()
+        router.routeToEditToday()
     }
 
     private func requestAccess() {
