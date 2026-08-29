@@ -56,7 +56,7 @@ struct OnboardingWelcomeView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Wordmark()
-            Spacer(minLength: Metrics.space3)
+            Spacer()
             Text("A product by Levo Studio")
                 .steadyTextStyle(.credit)
                 .foregroundStyle(Palette.mut)

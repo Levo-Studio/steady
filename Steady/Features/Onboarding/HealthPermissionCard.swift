@@ -51,7 +51,7 @@ struct HealthPermissionCard: View {
             }
             .fixedSize(horizontal: false, vertical: true)
 
-            Spacer(minLength: Metrics.space3)
+            Spacer()
 
             HealthToggleGlyph()
         }
