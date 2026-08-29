@@ -268,24 +268,25 @@ nonisolated extension SteadyTextStyle {
 /// entry value, the `64` pt trend headline, every stat value — and `1.14` on
 /// the onboarding headline. Every one of those needs the box made *smaller*.
 ///
-/// So the layout is taken over: `sizeThatFits` reports `lines × lineBox`, and
-/// `draw` places each line's natural box centred inside its target box, which
-/// is the CSS half-leading model the design was authored in.
+/// So the layout is taken over: the text is measured and broken at the font's
+/// own line height, then the box it occupies is shrunk to `lines × lineBox`
+/// and each line is drawn centred inside its target box, which is the CSS
+/// half-leading model the design was authored in.
+///
+/// The measuring and the drawing are deliberately two separate pieces. A
+/// `TextRenderer` that reports a shorter height gets that same height handed
+/// back to it as the line-breaking proposal, so a box below the font's natural
+/// one silently costs lines: `.onboardingHeadline` at `36 / 1.14` fits
+/// `floor(41.04 / 42.91) = 0` extra lines and truncates to one ellipsed line at
+/// the *default* type size. The renderer therefore does not size anything at
+/// all — it only positions the lines — and `LineBoxLayout` does the shrinking
+/// one level up, after the break points are already fixed.
 private struct LineBoxRenderer: TextRenderer {
 
     /// The design's line box in points, `size × lineHeight`.
     let lineBox: CGFloat
     /// What the font would have used.
     let naturalLineHeight: CGFloat
-
-    func sizeThatFits(proposal: ProposedViewSize, text: TextProxy) -> CGSize {
-        let natural = text.sizeThatFits(proposal)
-        guard naturalLineHeight > 0 else { return natural }
-        // SwiftUI has already rounded the natural height to the pixel grid, so
-        // the line count is recovered by division rather than carried across.
-        let lines = max(1, (natural.height / naturalLineHeight).rounded())
-        return CGSize(width: natural.width, height: lines * lineBox)
-    }
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
         let halfLeading = (lineBox - naturalLineHeight) / 2
@@ -295,6 +296,79 @@ private struct LineBoxRenderer: TextRenderer {
             lineContext.translateBy(x: 0, y: target - line.typographicBounds.rect.minY)
             lineContext.draw(line)
         }
+    }
+}
+
+/// Reports the design's line box for text that has been broken at the font's.
+///
+/// The text inside is always proposed an unbounded height, so it wraps over as
+/// many lines as the width demands. Only the size handed back to the parent is
+/// the design's — `lines × lineBox` — which is what every vertical rhythm value
+/// in the design reference is measured against. The lines are then drawn into
+/// that shorter box by `LineBoxRenderer`; on a sub-natural box the last line's
+/// descender reaches a fraction of a point past the bottom edge, which is the
+/// same overhang the CSS the design was authored in produces.
+private struct LineBoxLayout: Layout {
+
+    /// The design's line box in points, `size × lineHeight`.
+    let lineBox: CGFloat
+    /// What the font would have used.
+    let naturalLineHeight: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let natural = naturalSize(width: proposal.width, subviews: subviews)
+        return CGSize(width: natural.width, height: lineCount(for: natural.height) * lineBox)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let subview = subviews.first else { return }
+        let natural = naturalSize(width: bounds.width, subviews: subviews)
+        subview.place(
+            at: CGPoint(x: bounds.minX, y: bounds.minY),
+            anchor: .topLeading,
+            proposal: ProposedViewSize(width: bounds.width, height: natural.height)
+        )
+    }
+
+    /// The baselines the renderer will actually draw on, so a baseline-aligned
+    /// row still lines up once the box has been resized. `SteadyTextStyle`
+    /// adds the half-leading on top of these; a `Layout` that returned nil here
+    /// would fall back to the box's edges and take the `104` pt entry value's
+    /// "kg" with it.
+    func explicitAlignment(
+        of guide: VerticalAlignment,
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache: inout ()
+    ) -> CGFloat? {
+        guard let subview = subviews.first else { return nil }
+        let dimensions = subview.dimensions(in: ProposedViewSize(width: bounds.width, height: nil))
+        switch guide {
+        case .firstTextBaseline:
+            return dimensions[.firstTextBaseline]
+        case .lastTextBaseline:
+            // Every line above the last one has been pulled in by the
+            // difference between the two boxes, so the last baseline moves by
+            // that difference times the number of gaps above it.
+            let gaps = lineCount(for: dimensions.height) - 1
+            return dimensions[.lastTextBaseline] + gaps * (lineBox - naturalLineHeight)
+        default:
+            return nil
+        }
+    }
+
+    /// The text laid out with no height constraint, which is the only way to
+    /// see how many lines it really wants.
+    private func naturalSize(width: CGFloat?, subviews: Subviews) -> CGSize {
+        subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)) ?? .zero
+    }
+
+    /// SwiftUI has already rounded the natural height to the pixel grid, so the
+    /// line count is recovered by division rather than carried across.
+    private func lineCount(for naturalHeight: CGFloat) -> CGFloat {
+        guard naturalLineHeight > 0 else { return 1 }
+        return max(1, (naturalHeight / naturalLineHeight).rounded())
     }
 }
 
@@ -323,21 +397,27 @@ private struct SteadyTextStyleModifier: ViewModifier {
 
 private extension View {
 
-    /// Puts the text on the design's line box and moves the first baseline with
-    /// it, so a baseline-aligned row (the entry value and its "kg") still lines
-    /// up after the box has been resized.
+    /// Puts the text on the design's line box and moves the baselines with it,
+    /// so a baseline-aligned row (the entry value and its "kg") still lines up
+    /// after the box has been resized.
     @ViewBuilder
     func lineBox(_ metrics: SteadyTextStyle.Resolved) -> some View {
         if metrics.matchesNaturalLineHeight {
             self
         } else {
-            textRenderer(
-                LineBoxRenderer(
-                    lineBox: metrics.lineBox,
-                    naturalLineHeight: metrics.naturalLineHeight
+            LineBoxLayout(
+                lineBox: metrics.lineBox,
+                naturalLineHeight: metrics.naturalLineHeight
+            ) {
+                textRenderer(
+                    LineBoxRenderer(
+                        lineBox: metrics.lineBox,
+                        naturalLineHeight: metrics.naturalLineHeight
+                    )
                 )
-            )
+            }
             .alignmentGuide(.firstTextBaseline) { $0[.firstTextBaseline] + metrics.halfLeading }
+            .alignmentGuide(.lastTextBaseline) { $0[.lastTextBaseline] + metrics.halfLeading }
         }
     }
 }
