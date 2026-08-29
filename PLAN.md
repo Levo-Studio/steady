@@ -16,7 +16,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
 | 1 | Onboarding screens | B | *(closed)* | `feat/onboarding-screen` | **merged** |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | *(closed)* | `feat/log-screen` | **merged** |
-| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | fixing (resumed after API limit) |
+| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | *(closed)* | `feat/trend-screen` | **merged** |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
 | 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
@@ -294,3 +294,31 @@ accessState)`.
   clamped end-point claimed the edge of the strip held the value the centre was already
   showing. That earlier "fix" was wrong.
 - Feature 3 (Trend) finished its fixes including the failed-read blocker; sent for re-review.
+
+- **Feature 3 (Trend) merged to `main` and pushed.** Re-review passed on correctness and
+  design. Batch B is complete; all three screens are in.
+
+## Orchestrator work now due on `main`, in order
+
+1. **`LineBoxRenderer` truncation — blocking.** Styles below Helvetica Neue's ~1.174 truncate
+   instead of wrapping. Affected and to be re-checked with real wrapped text: Onboarding
+   `.onboardingHeadline` (36/1.14, broken at the DEFAULT size), Log `FailureLine` (`.cardLabel`
+   13/1, written to wrap) and the Edit meta line (`.metaNumeric` 14/1), Trend
+   `healthRowSubtitle`, `cardLabel` and `periodSegment`. Constraint from the onboarding
+   reviewer: `maybeLater`'s exact-44 pt hit area depends on `lineBox` staying `pointSize × 1`
+   for a single line, so keep `sizeThatFits` returning `lines × lineBox` and change only the
+   wrapping/measurement path.
+2. **`AppRouter` Edit-today route.** Add `wantsEditToday` with `routeToEditToday()` and
+   `consumeEditTodayRequest()`, mutually exclusive with `wantsLogEntry` (clear each in the
+   other's setter). Trend's Today cell calls it; `LogView` consumes it and presents §7.6,
+   falling back to §7.4 when today has no reading. Without it, tapping Today forces a blank
+   ruler over an existing reading.
+3. **Deprecation warnings.** `WeightStore.stats(for:)` still calls the positional overload
+   Trend deprecated (`WeightStore.swift:117`) — it was out of Trend's scope so it could not be
+   silenced there. Also twelve `'+' was deprecated in iOS 26.0` on `Text` concatenation in
+   `TrendChart.swift`; iOS 26 wants interpolation for mixed-colour runs.
+4. **Dynamic Type on the Trend header.** `deltaBadge` is `.fixedSize()` with no
+   `maxDynamicTypeSize` while `trendHeadline` caps at `.xLarge`, so at accessibility sizes the
+   badge overflows the card rather than the numeral giving way. Belongs with item 1.
+
+Then Feature 4 (App Intents) and Feature 5 (theming pass).
