@@ -8,6 +8,13 @@
 
 import Foundation
 
+// Previews and nothing else. `StubHealthService` is a full `HealthServicing`
+// conformance whose `save(kilograms:on:)` does nothing at all — shipping it in
+// the release binary leaves one careless `WeightStore(health: StubHealthService())`
+// between the app and silently discarded weigh-ins. It has no business outside a
+// debug build, so neither does the file.
+#if DEBUG
+
 /// A plausible run of readings, generated the same way every time.
 ///
 /// A slow drift with two out-of-phase wobbles on top of it — enough daily noise
@@ -58,7 +65,14 @@ nonisolated struct StubHealthService: HealthServicing {
 
     func accessState() async -> HealthAccessState { state }
 
-    func readDailyReadings() async throws -> [WeightSample] { readings }
+    /// Set to preview the read-failed state, which the design reference does
+    /// not draw but the store can produce at any time.
+    var failsRead = false
+
+    func readDailyReadings() async throws -> [WeightSample] {
+        if failsRead { throw HealthServiceError.unavailable }
+        return readings
+    }
 
     func save(kilograms: Double, on date: Date) async throws {}
 
@@ -68,3 +82,5 @@ nonisolated struct StubHealthService: HealthServicing {
         AsyncStream { $0.finish() }
     }
 }
+
+#endif

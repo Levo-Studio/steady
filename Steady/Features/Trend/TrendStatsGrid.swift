@@ -135,6 +135,8 @@ private extension View {
     }
 }
 
+#if DEBUG
+
 // MARK: - Previews
 
 #Preview("Light") {
@@ -181,3 +183,5 @@ private extension View {
     .background(Palette.bg)
     .preferredColorScheme(.dark)
 }
+
+#endif

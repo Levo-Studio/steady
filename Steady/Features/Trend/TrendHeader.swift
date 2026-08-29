@@ -197,6 +197,8 @@ private extension UnitCurve {
     )
 }
 
+#if DEBUG
+
 // MARK: - Previews
 
 #Preview("Light") {
@@ -226,3 +228,5 @@ private extension UnitCurve {
     .background(Palette.sur)
     .preferredColorScheme(.dark)
 }
+
+#endif

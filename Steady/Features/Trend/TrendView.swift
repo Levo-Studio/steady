@@ -137,23 +137,35 @@ struct TrendView: View {
     }
 }
 
+#if DEBUG
+
 // MARK: - Previews
 
 private struct TrendPreviewHost: View {
 
     let readings: [WeightSample]
     var accessState: HealthAccessState = .granted
+    var failsRead = false
 
     @State private var store: WeightStore
     @State private var router = AppRouter()
     @State private var tab = RootTab.trend
 
-    init(readings: [WeightSample], accessState: HealthAccessState = .granted) {
+    init(
+        readings: [WeightSample],
+        accessState: HealthAccessState = .granted,
+        failsRead: Bool = false
+    ) {
         self.readings = readings
         self.accessState = accessState
+        self.failsRead = failsRead
         _store = State(
             initialValue: WeightStore(
-                health: StubHealthService(readings: readings, state: accessState)
+                health: StubHealthService(
+                    readings: readings,
+                    state: accessState,
+                    failsRead: failsRead
+                )
             )
         )
     }
@@ -198,3 +210,20 @@ private struct TrendPreviewHost: View {
     TrendPreviewHost(readings: TrendPreviewData.samples(days: 60), accessState: .off)
         .preferredColorScheme(.dark)
 }
+
+#Preview("Access off, no history — dark") {
+    TrendPreviewHost(readings: [], accessState: .off)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Read failed — light") {
+    TrendPreviewHost(readings: TrendPreviewData.samples(days: 120), failsRead: true)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Read failed — dark") {
+    TrendPreviewHost(readings: TrendPreviewData.samples(days: 120), failsRead: true)
+        .preferredColorScheme(.dark)
+}
+
+#endif
