@@ -100,8 +100,8 @@ nonisolated enum Metrics {
     static let trendLineWidth: CGFloat = 5
     /// The thin polyline through the raw readings.
     static let rawLineWidth: CGFloat = 1.5
-    /// Padding applied to the chart's value range, top and bottom.
-    static let chartPadFactor: Double = 0.3
+    // The chart's value-range padding factor is not here: it belongs to the
+    // maths that applies it, as `ChartGeometry.defaultPadFactor`.
     /// The empty state's dashed baseline.
     static let emptyBaselineY: CGFloat = 118
     static let emptyBaselineDash: [CGFloat] = [6, 7]
@@ -151,6 +151,10 @@ nonisolated enum Metrics {
 
     static let sheetBlurRadius: CGFloat = 3
     static let sheetBackdropOpacity: Double = 0.55
-    static let sheetShadowRadius: CGFloat = 60
+    /// The design specifies `0 −14px 60px`, and a CSS blur radius is about
+    /// twice the Gaussian sigma. `.shadow(radius:)` *is* the sigma, so the
+    /// 60 pt blur is a 30 pt radius here. This is the only shadow in the
+    /// product; getting it wrong makes it twice as diffuse as designed.
+    static let sheetShadowRadius: CGFloat = 30
     static let sheetShadowOffsetY: CGFloat = -14
 }
