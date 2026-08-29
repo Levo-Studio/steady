@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Steady collects nothing and transmits nothing. There is no backend, no
+	  analytics and no network code of any kind, so every collected-data and
+	  tracking-domain list here is empty rather than merely short.
+
+	  Weight is read from and written to HealthKit on the device. It never
+	  leaves it, which is why it is not declared as collected data: Apple's
+	  definition covers transmitting data off the device, and Steady has no
+	  means to.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!--
+			  One boolean: whether onboarding has been completed. It is the
+			  only thing Steady persists outside HealthKit, it is read and
+			  written by this app alone, and it is never shared with anything.
+			  CA92.1 is the reason code for exactly that case.
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

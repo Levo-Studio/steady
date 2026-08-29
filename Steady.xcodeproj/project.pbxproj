@@ -336,6 +336,7 @@
 				DEVELOPMENT_TEAM = K8MBH3BP96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Steady reads your weight so it can show you your trend.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Steady saves the weight you log to Apple Health.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -370,6 +371,7 @@
 				DEVELOPMENT_TEAM = K8MBH3BP96;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Steady reads your weight so it can show you your trend.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Steady saves the weight you log to Apple Health.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
