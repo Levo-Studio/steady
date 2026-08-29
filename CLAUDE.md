@@ -48,13 +48,28 @@ Commits and pull requests read as if the project owner wrote them. Never add:
 Use Conventional Commits. Commit every small, self-contained change separately —
 not one giant commit per feature. Describe what changed and why.
 
+## Push immediately — always
+
+Every commit gets pushed to `origin` right away. Not at the end of a feature, not at
+the end of the session — immediately after the commit lands.
+
+```
+git commit -m "..." && git push
+```
+
+This applies to every agent and every worktree. When working on a feature branch in a
+worktree, push that branch to `origin` too (`git push -u origin <branch>` the first
+time). The remote is the source of truth for resuming an interrupted run, so nothing
+of value may sit only in a local repository.
+
 ## Working rules
 
 - `PLAN.md` status is updated and committed immediately after every merge and every
   milestone, never batched.
 - Feature work happens in a dedicated git worktree, never directly in the main
   working directory.
-- Merges into `main` are strictly sequential — one feature at a time.
+- Merges into `main` are strictly sequential — one feature at a time, and each
+  merge is pushed before the next one starts.
 - Never mark work as done without verifying it builds and type-checks.
 
 ## License
