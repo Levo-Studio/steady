@@ -16,7 +16,7 @@ higher one wins.
    App Intents, screen inventory, theming rules.
 3. `PLAN.md` — the feature breakdown and live build status. It is also the resume
    point for interrupted sessions.
-4. `Steady - Case Studie Notes.md` — the case study. **This is a living document, not
+4. `docs/Steady - Case Studie Notes.md` — the case study. **This is a living document, not
    a read-only reference.** When you land a feature, add an entry: what was built, the
    decisions behind it, the tradeoffs. Write it for a portfolio audience — clear,
    confident, no filler, no corporate tone. Do not dump changelogs into it.
@@ -62,3 +62,17 @@ not one giant commit per feature. Describe what changed and why.
 Source-available under the PolyForm Noncommercial License 1.0.0 (`LICENSE`).
 Readable and usable for non-commercial purposes; not resellable, relicensable, or
 repackageable. Steady remains a Levo Studio product.
+
+## Repository layout
+
+```
+Steady/            app source (SwiftUI)
+Steady.xcodeproj/  Xcode project
+branding/          the mark and the Icon Composer source
+docs/              case study notes
+design/            the design reference (imported from Claude Design)
+```
+
+The mark is `branding/steady-mark-light.png` / `branding/steady-mark-dark.png`, and
+`branding/steady-icon.icon` is the Icon Composer document the app icon is built from.
+These are the existing brand assets — use them. Do not generate new ones.
