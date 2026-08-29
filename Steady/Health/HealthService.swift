@@ -76,10 +76,14 @@ actor HealthService: HealthServicing {
 
     /// `HKHealthStore` is documented as safe to use from any thread — its
     /// queries run on queues of their own — but it is not marked `Sendable`.
-    /// It is held `nonisolated(unsafe)` so the observation stream can use this
+    /// It is held in a `StoreBox` so the observation stream can use this
     /// one store rather than standing up a second one, which would open a
     /// second connection to the health database for no reason.
-    private nonisolated(unsafe) let store = HKHealthStore()
+    private let storeBox = StoreBox(HKHealthStore())
+
+    /// The store itself, for the actor's own use. The box exists only so the
+    /// observation stream can carry it across an isolation boundary.
+    private var store: HKHealthStore { storeBox.value }
     private let quantityType = HKQuantityType(.bodyMass)
     private let calendar: Calendar
     private let appBundleIdentifier: String?
@@ -122,9 +126,16 @@ actor HealthService: HealthServicing {
 
     func readDailyReadings() async throws -> [WeightSample] {
         let samples = try await rawSamples()
-        // One value per day, the earliest sample of that calendar day, because
-        // the product is about morning weight under consistent conditions.
-        return TrendEngine.dailyReadings(from: samples, calendar: calendar)
+        // One value per day: a sample Steady wrote wins, otherwise the earliest
+        // sample of that calendar day. Passing the bundle identifier is what
+        // enables the first rule — without it the engine falls back to
+        // earliest-only and a scale's morning reading would outrank a weight
+        // the user logged themselves. See STEADY.md §4.
+        return TrendEngine.dailyReadings(
+            from: samples,
+            calendar: calendar,
+            steadyBundleIdentifier: appBundleIdentifier
+        )
     }
 
     private func rawSamples() async throws -> [WeightSample] {
@@ -206,7 +217,7 @@ actor HealthService: HealthServicing {
     // MARK: - Observation
 
     func changes() -> AsyncStream<Void> {
-        let store = StoreBox(store)
+        let store = storeBox
         let type = quantityType
         return AsyncStream { continuation in
             guard HKHealthStore.isHealthDataAvailable() else {
@@ -214,22 +225,21 @@ actor HealthService: HealthServicing {
                 return
             }
 
-            // Two queries, because they do different jobs. The observer is what
-            // HealthKit will wake the app for when another app writes body mass
-            // while Steady is not running; the anchored query is what actually
-            // notices a change while it is.
+            // Two queries, because they do different jobs. The observer is the
+            // one HealthKit drives; the anchored query delivers the initial set
+            // and every subsequent change.
+            //
+            // Background delivery is deliberately not enabled. It only pays off
+            // with an observer registered at launch that can service a
+            // background relaunch, and this stream lives only as long as the
+            // scene. Requesting the entitlement without that would be signing
+            // friction and an App Review privacy surface for no behaviour.
             let observer = HKObserverQuery(sampleType: type, predicate: nil) { _, completionHandler, _ in
                 continuation.yield(())
                 // HealthKit retries the notification until this is called.
                 completionHandler()
             }
             store.value.execute(observer)
-            store.value.enableBackgroundDelivery(for: type, frequency: .immediate) { _, _ in
-                // Background delivery is a convenience, not a requirement: the
-                // app reads on appear regardless. Nothing is logged either way
-                // — health data, and anything derived from it, never reaches a
-                // log.
-            }
 
             let task = Task {
                 // An anchored object query delivers the initial set and then
@@ -260,7 +270,10 @@ actor HealthService: HealthServicing {
 
 /// Carries the one `HKHealthStore` across isolation boundaries.
 ///
-/// `HKHealthStore` is thread-safe in practice but is not marked `Sendable`,
+/// `HKHealthStore` is not marked `Sendable`, and Apple does not actually document
+/// it as thread-safe — it is universally used this way and behaves accordingly,
+/// which is a weaker claim and the honest one to record next to an opt-out.
+/// The box is
 /// and the observation stream's continuation handlers are. Boxing it is
 /// preferable to the alternative, which is a second store per stream.
 private nonisolated struct StoreBox: @unchecked Sendable {

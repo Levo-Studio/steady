@@ -252,7 +252,7 @@ struct TrendEngineTests {
         let samples = zip(dates, [70.0, 70.4, 71.0, 71.2]).map {
             WeightSample(date: $0.0, kilograms: $0.1)
         }
-        let values = TrendEngine.dailyValues(from: samples, calendar: calendar)
+        let values = TrendEngine.dailyValues(from: samples, calendar: calendar, steadyBundleIdentifier: nil)
         #expect(values == [70.0, 70.4, 71.0, 71.2])
         // Four readings across six calendar days still produce four points.
         #expect(TrendEngine.trend(for: values).count == 4)
@@ -267,7 +267,7 @@ struct TrendEngineTests {
             WeightSample(date: evening, kilograms: 73.1),
             WeightSample(date: morning, kilograms: 72.4)
         ]
-        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar) == [72.4])
+        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar, steadyBundleIdentifier: nil) == [72.4])
     }
 
     @Test("Readings arrive in date order regardless of the order they came in")
@@ -280,7 +280,7 @@ struct TrendEngineTests {
                 kilograms: 70 + Double($0)
             )
         }
-        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar) == [70, 71, 72])
+        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar, steadyBundleIdentifier: nil) == [70, 71, 72])
     }
 
     @Test("Steady's own sample wins the day over an earlier one from elsewhere")
@@ -339,7 +339,7 @@ struct TrendEngineTests {
             WeightSample(date: morning, kilograms: 73.1, sourceBundleIdentifier: "com.scale.app"),
             WeightSample(date: evening, kilograms: 72.4, sourceBundleIdentifier: steadyBundle)
         ]
-        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar) == [73.1])
+        #expect(TrendEngine.dailyValues(from: samples, calendar: calendar, steadyBundleIdentifier: nil) == [73.1])
     }
 
     @Test("Weekly means bucket short histories without inventing days")

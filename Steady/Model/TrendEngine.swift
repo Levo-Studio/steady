@@ -54,7 +54,7 @@ nonisolated enum TrendEngine {
     static func dailyValues(
         from samples: [WeightSample],
         calendar: Calendar = .current,
-        steadyBundleIdentifier: String? = nil
+        steadyBundleIdentifier: String?
     ) -> [Double] {
         dailyReadings(
             from: samples,
@@ -68,7 +68,7 @@ nonisolated enum TrendEngine {
     static func dailyReadings(
         from samples: [WeightSample],
         calendar: Calendar = .current,
-        steadyBundleIdentifier: String? = nil
+        steadyBundleIdentifier: String?
     ) -> [WeightSample] {
         var chosenByDay: [Date: WeightSample] = [:]
         for sample in samples {
