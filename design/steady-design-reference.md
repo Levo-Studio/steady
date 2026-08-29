@@ -460,9 +460,15 @@ redraws the trend. It must never be adjacent to the confirm action.
 
 - The screen behind is blurred `3` pt at opacity `.55`, and covered by a scrim of
   `rgba(10, 9, 14, .5)`.
-- A sheet pinned to the bottom, inset `24` on the sides and `40` from the bottom: `sur`
-  fill, radius `28`, padding `40` top / `24` sides / `24` bottom, centred text, shadow
-  `0 −14px 60px rgba(10, 9, 14, .4)`.
+- A sheet **flush to the bottom and to both edges** — no side inset, no bottom inset. It
+  spans the full screen width and its bottom edge is the bottom of the display. `sur` fill,
+  corner radius `28` on the **top two corners only** (the bottom corners are square, because
+  there is no gap for them to round against), padding `40` top / `24` sides / `24` bottom
+  **plus the bottom safe-area inset** so the buttons clear the home indicator. Centred text,
+  shadow `0 −14px 60px rgba(10, 9, 14, .4)`.
+  This is a deliberate revision: the sheet previously floated with a `24` / `40` margin. A
+  confirmation that decides whether a day's data survives should read as the system taking
+  over the bottom of the screen, not as a card hovering above it.
 - Title: "Delete today's entry?" (22 pt / 500).
 - `margin-top: 14` — body 15 pt `mut`: "72.4 kg from Saturday, 29 August will be removed
   and the trend recalculated." The consequence to the trend is stated explicitly; do not
@@ -545,15 +551,88 @@ not reconcile them in either direction.
 
 ## 9. Motion
 
-The design is quiet. Only four movements exist:
+**This section was rewritten by the owner.** It previously enumerated four movements and
+forbade springs. That is no longer the direction: the app should feel alive under the finger
+— things that can be pressed respond to being pressed, and things that change value show the
+change. What has not changed is the taste. Motion here is *responsive*, never decorative. It
+tells you the app registered your touch and where a number came from. It never entertains.
 
-1. The ruler tracking the finger — direct, 1:1, no easing.
-2. The `104` pt value updating as the ruler moves — no transition, it is the same gesture.
-3. The Trend headline and badge on period change — `0.34s` ease, fade + 6 pt lift.
-4. The delete sheet presenting over a blurred, scrimmed background.
+### The three springs
 
-Everything else is a state change with no animation. Do not add spring effects, parallax,
-or entrance staggers. Under Reduce Motion, translations are dropped and cross-fades remain.
+Every animation in Steady is one of these three. Nothing else is defined, and adding a fourth
+needs a reason written down next to it.
+
+| Token | Spring | Used for |
+|---|---|---|
+| `press` | response `0.28`, damping `0.7` | a control reacting to a finger — scale down on touch, back on release |
+| `settle` | response `0.42`, damping `0.82` | a value or a layout moving to a new position: the sliding pill, a number changing, a card resizing |
+| `present` | response `0.5`, damping `0.85` | something arriving or leaving: the delete sheet, a screen swap |
+
+Damping is high in all three on purpose. These are springs that *arrive* — a single confident
+overshoot at most. A control that visibly wobbles twice is a toy, and this app is used at
+6 a.m. by someone who has not had coffee.
+
+### Press feedback — every control, no exceptions
+
+Anything tappable scales to `0.96` on touch-down with `press`, and back to `1.0` on release.
+That means: both primary buttons, the outlined button, the stepper's `−` and `+`, both tab
+items, the three period segments, the Today stat cell, both sheet buttons, "Maybe later", and
+"Allow" on the access banner. The scale is small on purpose — at `0.96` you feel it more than
+you see it, which is the point.
+
+Press feedback is **not** cancelled by Reduce Motion. A scale of 4% is not vestibular motion,
+it is the control acknowledging the touch, and removing it makes the app feel broken rather
+than calm.
+
+### The sliding pill
+
+The tab bar's active pill and the period control's active pill **slide** between positions
+with `settle`, rather than cross-fading. Use `matchedGeometryEffect` with one namespace per
+control so the pill is genuinely the same view moving, not two views fading. This is the
+single most important animation in the app: it is what makes the two segmented controls feel
+like physical switches instead of radio buttons.
+
+### Numbers
+
+A figure that changes because the user changed a range — the `64` pt trend headline, the four
+stat values, the delta badge — transitions with `settle`. Use a numeric content transition so
+digits roll rather than the whole string swapping.
+
+The `104` pt entry value is the **exception**: it changes because the finger is moving it, so
+it must not animate at all. Any easing there puts the number behind the ruler and destroys
+the sense of direct manipulation. Same for the ruler strip itself.
+
+### Trend screen
+
+The period change keeps its `0.34s` fade and `6` pt lift on the headline block and badge, and
+gains:
+
+- The **chart line draws in** on first appearance and re-draws on every range change, its path
+  animating from flat to its shape over `0.45s` with `settle`. The glow area fades with it.
+  This is the screen's one piece of theatre and it is earned: the line *is* the product, and
+  watching it resolve out of the dots is the clearest possible statement of what the app does.
+- The **raw dots fade and scale in** from `0.8`, staggered by `0.012s` each, capped so a year
+  of dots never takes longer than `0.3s` in total. Stagger from the oldest reading forward, so
+  the eye is pulled left-to-right into the most recent value.
+- The **stats grid** cross-fades its numbers with `settle` on range change.
+
+### Screens and sheets
+
+The delete sheet rises from the bottom edge with `present` while the scrim and blur fade in
+over the same duration. It leaves the same way. Screen swaps inside a tab — entry to
+already-logged, and into Edit today — use an opacity-plus-`4` pt lift with `present`; they
+never slide horizontally, because there is no navigation stack and a horizontal slide would
+imply one.
+
+### Reduce Motion
+
+Under Reduce Motion: **keep** press feedback, keep cross-fades, keep the numeric transitions.
+**Drop** every translation and every scale that is not press feedback — the pill cross-fades
+instead of sliding, the chart line appears at full shape without drawing in, the dots appear
+without stagger or scale, the sheet fades in place rather than rising.
+
+The rule is that nothing becomes *unreadable* or *unclear* when motion is reduced. Every
+animation above is confirmation of something the layout already says.
 
 ---
 
