@@ -126,9 +126,11 @@ struct WeightEntryBlock: View {
 ///
 /// `WeightStore` hands over a ready message and never puts a weight value in it
 /// — health data never reaches a string that could be logged. The design has no
-/// error state, so this takes the quietest form the palette allows rather than
-/// inventing a colour: `danger` is reserved for delete and there is no other
-/// warning token.
+/// error state, so this takes the quietest form that still carries meaning:
+/// 13 pt `ink`. It cannot be `mut`, which design reference §2 forbids for
+/// anything essential-only, and this line is the entire signal that a save did
+/// not happen; `danger` is reserved for delete, and inventing a token is worse
+/// than either.
 struct FailureLine: View {
 
     let message: String
@@ -136,7 +138,7 @@ struct FailureLine: View {
     var body: some View {
         Text(message)
             .steadyTextStyle(.cardLabel)
-            .foregroundStyle(Palette.mut)
+            .foregroundStyle(Palette.ink)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
     }
