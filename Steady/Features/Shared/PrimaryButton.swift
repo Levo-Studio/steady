@@ -20,7 +20,7 @@ struct PrimaryButton<Label: View>: View {
         case ink
         /// The committing action: `ac` fill, `acink` label.
         case accent
-        /// A 1 pt `line` border, no fill, `ink` label. "Edit today's weight".
+        /// A 1 pt `line` border, no fill, `ink` label. "Edit today’s weight".
         case outline
     }
 
@@ -85,7 +85,7 @@ extension PrimaryButton where Label == Text {
                 Text("kg")
             }
         }
-        PrimaryButton("Edit today's weight", fill: .outline) {}
+        PrimaryButton("Edit today’s weight", fill: .outline) {}
     }
     .padding(Metrics.space4)
     .background(Palette.bg)
@@ -96,7 +96,7 @@ extension PrimaryButton where Label == Text {
     VStack(spacing: Metrics.space3) {
         PrimaryButton("Allow in Apple Health", fill: .ink) {}
         PrimaryButton("Update", fill: .accent) {}
-        PrimaryButton("Edit today's weight", fill: .outline) {}
+        PrimaryButton("Edit today’s weight", fill: .outline) {}
     }
     .padding(Metrics.space4)
     .background(Palette.bg)

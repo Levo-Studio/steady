@@ -167,7 +167,7 @@ nonisolated extension SteadyTextStyle {
         size: 24, lineHeight: 1.2, weight: .medium, tracking: -0.03, relativeTo: .title2
     )
 
-    /// `22 / 1.2`, 500, −0.03em. "Delete today's entry?"
+    /// `22 / 1.2`, 500, −0.03em. "Delete today’s entry?"
     static let deleteSheetTitle = Self(
         size: 22, lineHeight: 1.2, weight: .medium, tracking: -0.03, relativeTo: .title2
     )
@@ -184,7 +184,7 @@ nonisolated extension SteadyTextStyle {
     /// `17`, 400. "Keep it" in the confirm sheet.
     static let sheetButtonKeep = Self(size: 17, weight: .regular, relativeTo: .headline)
 
-    /// `17 / 1`, 500, −0.02em. "Edit today's weight".
+    /// `17 / 1`, 500, −0.02em. "Edit today’s weight".
     static let editTitle = Self(size: 17, weight: .medium, tracking: -0.02, relativeTo: .headline)
 
     /// `16 / 1.55`, 400. Onboarding body copy.
