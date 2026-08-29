@@ -13,10 +13,10 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
-| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | `../steady-worktrees/foundation` | `feat/foundation` | in review |
-| 1 | Onboarding screens | B | — | `feat/onboarding` | blocked on 0 |
-| 2 | Log screen — ruler + stepper, HealthKit write | B | — | `feat/log-screen` | blocked on 0 |
-| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | — | `feat/trend-screen` | blocked on 0 |
+| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
+| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | in progress |
+| 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | in progress |
+| 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | in progress |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
 | 5 | Light/dark theming pass across all screens | D | — | `feat/theming-pass` | blocked on 1,2,3 |
 | 6 | README + logo header | — | *(closed)* | `docs/readme` | **merged** |
@@ -171,3 +171,22 @@ Append-only. One line per state change, so a reconnecting session can see what h
 - Code review finding #1 (the mark should use the logo hex) was rejected after checking the
   source: the in-app header uses `var(--ac, …)` and so takes the OKLCH accent. Only the
   exported `branding/` assets are hex. §8 reworded to remove the ambiguity that caused it.
+- Second review round on Feature 0: design review confirmed all three of its blockers
+  resolved and the token layer clean after a full regression sweep. Both reviewers then
+  independently found the SAME defect — `HealthService.swift` omitted
+  `steadyBundleIdentifier:`, so the day-precedence rule was dead in production while every
+  test stayed green, because the tests all called `TrendEngine` directly.
+- Fixed by hand rather than another agent round-trip, since both reviewers gave the exact
+  file and line. **The default argument was removed as well**, so omitting it is now a
+  compile error rather than a silent loss of behaviour — that immediately surfaced four
+  more call sites relying on the implicit `nil`. Also surfaced the swallowed read error,
+  dropped the useless background-delivery entitlement, and collapsed two concurrency
+  opt-outs to one with an honest comment.
+- Design reference §1 amended: screen padding is measured from the **physical** top, not the
+  safe area. The stubs had it wrong and Batch B would have copied the pattern into all three
+  real screens, landing every layout ~59 pt low.
+- **Feature 0 merged to `main` and pushed.** Build and tests verified on `main` itself, not
+  just on the branch. Worktree removed, branch deleted.
+- Batch B launched: three agents in parallel on `feat/onboarding-screen`, `feat/log-screen`,
+  `feat/trend-screen`, each confined to its own `Features/` folder and forbidden from
+  touching Theme, Model, Health, Shared, RootView or `project.pbxproj`.
