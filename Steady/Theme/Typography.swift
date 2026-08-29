@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// A single named text style from the design reference.
 ///
@@ -41,6 +42,8 @@ nonisolated struct SteadyTextStyle: Sendable, Equatable {
     /// largest thing on screen, so they scale but are capped rather than
     /// allowed to break the layout.
     let maxDynamicTypeSize: DynamicTypeSize?
+    /// Whether the style is set in capitals. Only the "EDIT" eyebrow is.
+    let isUppercased: Bool
 
     init(
         size: CGFloat,
@@ -49,7 +52,8 @@ nonisolated struct SteadyTextStyle: Sendable, Equatable {
         tracking: CGFloat = 0,
         tabularFigures: Bool = false,
         relativeTo: Font.TextStyle = .body,
-        maxDynamicTypeSize: DynamicTypeSize? = nil
+        maxDynamicTypeSize: DynamicTypeSize? = nil,
+        isUppercased: Bool = false
     ) {
         self.size = size
         self.lineHeight = lineHeight
@@ -58,18 +62,61 @@ nonisolated struct SteadyTextStyle: Sendable, Equatable {
         self.tabularFigures = tabularFigures
         self.relativeTo = relativeTo
         self.maxDynamicTypeSize = maxDynamicTypeSize
+        self.isUppercased = isUppercased
     }
-
-    /// Absolute letter spacing in points at the default size.
-    var letterSpacing: CGFloat { size * tracking }
-
-    /// Extra leading needed to reach the authored line height.
-    var lineSpacing: CGFloat { max(0, size * (lineHeight - 1)) }
 
     var font: Font {
         var font = Font.custom(weight.fontName, size: size, relativeTo: relativeTo)
         if tabularFigures { font = font.monospacedDigit() }
         return font
+    }
+}
+
+// MARK: - Resolved metrics
+
+nonisolated extension SteadyTextStyle {
+
+    /// The style's measurements once Dynamic Type has been applied.
+    ///
+    /// Tracking is authored in `em`, so it has to be multiplied against the
+    /// *resolved* point size — `.tracking()` takes absolute points while
+    /// `Font.custom(relativeTo:)` scales the glyphs, and using the unscaled
+    /// figure leaves the accessibility sizes visibly under-tracked.
+    struct Resolved: Equatable, Sendable {
+        /// The point size after Dynamic Type scaling.
+        var pointSize: CGFloat
+        /// The line box the design specifies: `pointSize × lineHeight`.
+        var lineBox: CGFloat
+        /// The line height Helvetica Neue actually has at `pointSize`
+        /// — roughly `1.19 × em`, which is why most styles need *less*
+        /// leading than the font gives, not more.
+        var naturalLineHeight: CGFloat
+        /// Absolute letter spacing in points.
+        var letterSpacing: CGFloat
+
+        /// Half the difference between the design's line box and the font's
+        /// own. Positive opens the lines up, negative closes them; it is the
+        /// distance the first baseline moves.
+        var halfLeading: CGFloat { (lineBox - naturalLineHeight) / 2 }
+
+        /// Whether the font already sits within a hair of the design's box.
+        var matchesNaturalLineHeight: Bool { abs(lineBox - naturalLineHeight) < 0.01 }
+    }
+
+    /// The style's metrics at one Dynamic Type size.
+    func resolved(at dynamicTypeSize: DynamicTypeSize) -> Resolved {
+        let capped = maxDynamicTypeSize.map { min(dynamicTypeSize, $0) } ?? dynamicTypeSize
+        let traits = UITraitCollection(preferredContentSizeCategory: capped.contentSizeCategory)
+        let pointSize = UIFontMetrics(forTextStyle: relativeTo.uiTextStyle)
+            .scaledValue(for: size, compatibleWith: traits)
+        let font = UIFont(name: weight.fontName, size: pointSize)
+            ?? .systemFont(ofSize: pointSize, weight: weight == .medium ? .medium : .regular)
+        return Resolved(
+            pointSize: pointSize,
+            lineBox: pointSize * lineHeight,
+            naturalLineHeight: font.lineHeight,
+            letterSpacing: pointSize * tracking
+        )
     }
 }
 
@@ -198,7 +245,51 @@ nonisolated extension SteadyTextStyle {
     static let credit = Self(size: 12, weight: .regular, relativeTo: .caption)
 
     /// `12 / 1`, 400, `+0.14em`, uppercase. The "EDIT" eyebrow.
-    static let eyebrow = Self(size: 12, weight: .regular, tracking: 0.14, relativeTo: .caption)
+    static let eyebrow = Self(
+        size: 12, weight: .regular, tracking: 0.14, relativeTo: .caption, isUppercased: true
+    )
+}
+
+// MARK: - Line boxes
+
+/// Draws a `Text` on the design's line box instead of the font's.
+///
+/// This is the whole reason the styles do not simply use `.lineSpacing()`.
+/// SwiftUI's `.lineSpacing` *adds* leading on top of the font's own line
+/// height and clamps negative values to zero, so it can only ever make a line
+/// box taller. Helvetica Neue's natural line height is about `1.19 × em`,
+/// while design reference §3 asks for `1` on almost everything — the `104` pt
+/// entry value, the `64` pt trend headline, every stat value — and `1.14` on
+/// the onboarding headline. Every one of those needs the box made *smaller*.
+///
+/// So the layout is taken over: `sizeThatFits` reports `lines × lineBox`, and
+/// `draw` places each line's natural box centred inside its target box, which
+/// is the CSS half-leading model the design was authored in.
+private struct LineBoxRenderer: TextRenderer {
+
+    /// The design's line box in points, `size × lineHeight`.
+    let lineBox: CGFloat
+    /// What the font would have used.
+    let naturalLineHeight: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, text: TextProxy) -> CGSize {
+        let natural = text.sizeThatFits(proposal)
+        guard naturalLineHeight > 0 else { return natural }
+        // SwiftUI has already rounded the natural height to the pixel grid, so
+        // the line count is recovered by division rather than carried across.
+        let lines = max(1, (natural.height / naturalLineHeight).rounded())
+        return CGSize(width: natural.width, height: lines * lineBox)
+    }
+
+    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        let halfLeading = (lineBox - naturalLineHeight) / 2
+        for (index, line) in layout.enumerated() {
+            let target = CGFloat(index) * lineBox + halfLeading
+            var lineContext = context
+            lineContext.translateBy(x: 0, y: target - line.typographicBounds.rect.minY)
+            lineContext.draw(line)
+        }
+    }
 }
 
 // MARK: - Application
@@ -206,11 +297,15 @@ nonisolated extension SteadyTextStyle {
 private struct SteadyTextStyleModifier: ViewModifier {
     let style: SteadyTextStyle
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     func body(content: Content) -> some View {
+        let metrics = style.resolved(at: dynamicTypeSize)
         let styled = content
             .font(style.font)
-            .tracking(style.letterSpacing)
-            .lineSpacing(style.lineSpacing)
+            .tracking(metrics.letterSpacing)
+            .textCase(style.isUppercased ? .uppercase : nil)
+            .lineBox(metrics)
 
         if let cap = style.maxDynamicTypeSize {
             styled.dynamicTypeSize(...cap)
@@ -220,9 +315,79 @@ private struct SteadyTextStyleModifier: ViewModifier {
     }
 }
 
+private extension View {
+
+    /// Puts the text on the design's line box and moves the first baseline with
+    /// it, so a baseline-aligned row (the entry value and its "kg") still lines
+    /// up after the box has been resized.
+    @ViewBuilder
+    func lineBox(_ metrics: SteadyTextStyle.Resolved) -> some View {
+        if metrics.matchesNaturalLineHeight {
+            self
+        } else {
+            textRenderer(
+                LineBoxRenderer(
+                    lineBox: metrics.lineBox,
+                    naturalLineHeight: metrics.naturalLineHeight
+                )
+            )
+            .alignmentGuide(.firstTextBaseline) { $0[.firstTextBaseline] + metrics.halfLeading }
+        }
+    }
+}
+
+// MARK: - Dynamic Type bridging
+
+private extension Font.TextStyle {
+
+    nonisolated
+
+    /// The UIKit style `Font.custom(_:size:relativeTo:)` scales against, so the
+    /// resolved point size can be recovered for the line-box maths.
+var uiTextStyle: UIFont.TextStyle {
+        switch self {
+        case .extraLargeTitle, .extraLargeTitle2: .largeTitle
+        case .largeTitle: .largeTitle
+        case .title: .title1
+        case .title2: .title2
+        case .title3: .title3
+        case .headline: .headline
+        case .subheadline: .subheadline
+        case .body: .body
+        case .callout: .callout
+        case .footnote: .footnote
+        case .caption: .caption1
+        case .caption2: .caption2
+        @unknown default: .body
+        }
+    }
+}
+
+private extension DynamicTypeSize {
+
+    nonisolated var contentSizeCategory: UIContentSizeCategory {
+        switch self {
+        case .xSmall: .extraSmall
+        case .small: .small
+        case .medium: .medium
+        case .large: .large
+        case .xLarge: .extraLarge
+        case .xxLarge: .extraExtraLarge
+        case .xxxLarge: .extraExtraExtraLarge
+        case .accessibility1: .accessibilityMedium
+        case .accessibility2: .accessibilityLarge
+        case .accessibility3: .accessibilityExtraLarge
+        case .accessibility4: .accessibilityExtraExtraLarge
+        case .accessibility5: .accessibilityExtraExtraExtraLarge
+        @unknown default: .large
+        }
+    }
+}
+
 extension View {
     /// Applies a named style from the design reference: family, size, weight,
-    /// tracking, line height, tabular figures and the Dynamic Type ceiling.
+    /// tracking, line box, tabular figures, letter case and the Dynamic Type
+    /// ceiling.
     func steadyTextStyle(_ style: SteadyTextStyle) -> some View {
         modifier(SteadyTextStyleModifier(style: style))
     }
