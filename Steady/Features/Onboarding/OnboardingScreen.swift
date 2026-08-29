@@ -34,3 +34,35 @@ struct OnboardingScreen<Content: View>: View {
             .ignoresSafeArea()
     }
 }
+
+#Preview("Light") {
+    OnboardingScreen {
+        VStack(alignment: .leading, spacing: 0) {
+            Wordmark()
+            Spacer()
+            Text("The scale lies. The line doesn’t.")
+                .steadyTextStyle(.onboardingHeadline)
+                .foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            PrimaryButton("Start weighing", fill: .ink) {}
+        }
+    }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    OnboardingScreen {
+        VStack(alignment: .leading, spacing: 0) {
+            Wordmark()
+            Spacer()
+            Text("The scale lies. The line doesn’t.")
+                .steadyTextStyle(.onboardingHeadline)
+                .foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            PrimaryButton("Start weighing", fill: .ink) {}
+        }
+    }
+    .preferredColorScheme(.dark)
+}
