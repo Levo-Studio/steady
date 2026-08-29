@@ -13,7 +13,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
-| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | `../steady-worktrees/foundation` | `feat/foundation` | in progress |
+| 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | `../steady-worktrees/foundation` | `feat/foundation` | in review |
 | 1 | Onboarding screens | B | — | `feat/onboarding` | blocked on 0 |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | — | `feat/log-screen` | blocked on 0 |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | — | `feat/trend-screen` | blocked on 0 |
@@ -139,3 +139,16 @@ Append-only. One line per state change, so a reconnecting session can see what h
 - Feature 6 (README) merged to `main` and pushed. Worktree removed, branch deleted.
   Reviewed by hand rather than by the two-agent gate: it ships no code and no screens,
   so neither the code nor the design review has anything to check.
+- Feature 0 implemented: 7 commits, `BUILD SUCCEEDED`, 39 tests passing. Code review and
+  design review agents launched in parallel against the worktree.
+- Design reference corrected after an independent check of the OKLCH arithmetic: the hex
+  values previously quoted for `ac` and `danger` were wrong (`#0072a8` and `#9c1143` are
+  the real conversions, not `#2b6ba8` and `#c8322f`). OKLCH is what the approved concept
+  rendered; hex appeared only as an unused CSS fallback. The logo keeps its hex values —
+  that sheet is authored in hex. Also documented two edge-case bugs in
+  `reference-weight.js` that must not be ported, and pinned the `⌀` to the label.
+- `CLAUDE.md` stack line corrected — it still said Swift Charts, which STEADY.md §5 forbids.
+- Feature 0 added two things beyond its brief, both accepted: `Model/WeightStore.swift`
+  (STEADY.md §3 requires the observable store, and without it all three Batch B agents
+  would each invent one) and a `SteadyTests` target (§12's tests need a home, and Batch B
+  is forbidden from touching `project.pbxproj`).
