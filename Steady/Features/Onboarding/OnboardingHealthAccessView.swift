@@ -61,12 +61,17 @@ struct OnboardingHealthAccessView: View {
     /// back out of the layout: the text keeps its `24` gap above and its `40`
     /// from the foot of the screen, while the target extends into the padding
     /// below it where there is nothing else to hit.
+    ///
+    /// Both gaps are made of padding alone, so they stay exact as the label's
+    /// box grows with Dynamic Type: `24 − hitAreaPadding` above the button's
+    /// own `hitAreaPadding` is `24` at every size, and the negative bottom
+    /// padding always cancels exactly one `hitAreaPadding`.
     private var maybeLater: some View {
         Button {
             onComplete()
         } label: {
             Text("Maybe later")
-                .steadyTextStyle(.privacyNote)
+                .steadyTextStyle(.maybeLater)
                 .foregroundStyle(Palette.mut)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Self.hitAreaPadding)
@@ -80,8 +85,14 @@ struct OnboardingHealthAccessView: View {
         .padding(.bottom, -Self.hitAreaPadding)
     }
 
-    /// Half the difference between a 13 pt line and a 44 pt target, rounded up.
-    private static let hitAreaPadding: CGFloat = 14
+    /// The minimum touch target, STEADY.md §11.
+    private static let minimumTarget: CGFloat = 44
+
+    /// Half the difference between the label's line box and that minimum. The
+    /// style is `13 / 1`, so the box *is* `13` pt and the padded button is
+    /// exactly `44`.
+    private static let hitAreaPadding =
+        (minimumTarget - SteadyTextStyle.maybeLater.size) / 2
 
     private func requestAccess() {
         guard !isRequesting else { return }
