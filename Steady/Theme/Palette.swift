@@ -87,6 +87,16 @@ nonisolated enum Palette {
         dark: .rgba(232, 120, 140, 0.15)
     )
 
+    // MARK: - Onboarding (design reference §7.2)
+
+    /// The knob of the illustrative Health toggles.
+    ///
+    /// White in **both** themes, which is why it cannot borrow `acink`: the dark
+    /// accent is a light blue, so its ink is near-black and the knob would
+    /// disappear into a shape nobody reads as a switch. The design specifies a
+    /// white knob and the system's own switch draws one, in either appearance.
+    static let toggleKnob = dynamic(light: .hex(0xFFFFFF), dark: .hex(0xFFFFFF))
+
     // MARK: - Ruler (design reference §5)
 
     /// Every fifth tick on the ruler strip.

@@ -65,9 +65,8 @@ struct HealthPermissionCard: View {
 /// The on-state toggle from design reference §4: a `51 × 31` pill in `ac` with a
 /// white knob of `27`, inset `2`.
 ///
-/// The knob is white in both themes because that is what the design specifies
-/// and what the system's own switch does — `Palette.acink` would turn it
-/// near-black in dark mode, which is not a toggle anybody recognises.
+/// The knob is `Palette.toggleKnob`, which is white in both themes — see the
+/// token for why it is not `acink`.
 private struct HealthToggleGlyph: View {
 
     var body: some View {
@@ -76,7 +75,7 @@ private struct HealthToggleGlyph: View {
             .frame(width: Metrics.toggleSize.width, height: Metrics.toggleSize.height)
             .overlay(alignment: .trailing) {
                 Circle()
-                    .fill(.white)
+                    .fill(Palette.toggleKnob)
                     .frame(
                         width: Metrics.toggleKnobDiameter,
                         height: Metrics.toggleKnobDiameter
