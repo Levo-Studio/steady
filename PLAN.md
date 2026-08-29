@@ -14,7 +14,7 @@ Read before writing any code: `design/steady-design-reference.md`, `STEADY.md`, 
 | # | Feature | Batch | Worktree | Branch | Status |
 |---|---|---|---|---|---|
 | 0 | Foundation — theme, model, trend engine, HealthKit, shared components | A | *(closed)* | `feat/foundation` | **merged** |
-| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | fixing review findings |
+| 1 | Onboarding screens | B | `../steady-worktrees/onboarding` | `feat/onboarding-screen` | fixes done, re-reviewing |
 | 2 | Log screen — ruler + stepper, HealthKit write | B | `../steady-worktrees/log` | `feat/log-screen` | in review |
 | 3 | Trend screen — chart, period toggle, stats, HealthKit read | B | `../steady-worktrees/trend` | `feat/trend-screen` | in review |
 | 4 | App Intents / Shortcuts | C | — | `feat/app-intents` | blocked on 2 |
@@ -217,3 +217,37 @@ The period segments are 36 pt tall, under STEADY.md §11's 44 pt minimum. The de
 fixes 36 explicitly and the reference wins, so it was built as drawn. The likely resolution is
 a 36 pt visual inside a 44 pt tap target, since the reference puts the segment in a 4 pt-padded
 container that is itself 44 tall.
+
+---
+
+## BLOCKING DEFECT — the line-box renderer truncates instead of wrapping
+
+Found by the onboarding fix agent while verifying something else, confirmed by stashing its
+work and reproducing on a clean `main`. **This is a pre-existing defect in Feature 0's
+`LineBoxRenderer` (`Steady/Theme/Typography.swift`), not a regression, and it affects all
+three screens.**
+
+Any style whose `lineHeight` is below Helvetica Neue's natural ratio (~1.174) **truncates
+rather than wraps**:
+
+- `.onboardingHeadline` is 36 / **1.14**, so it truncates at the **default** type size. The
+  welcome screen renders "The scale lies. T…" and the health screen "One box to tick, th…".
+  That is the largest and most important element on the first screen of the app.
+- At `.accessibility5` every `/1` style that has to wrap goes too: the wordmark becomes
+  "ste…", "Read weight" becomes "Rea…", "Allow in Apple Health" becomes "Allow in Appl…".
+- `.onboardingBody` (1.55) and `.privacyNote` (1.45) sit above the natural ratio and wrap
+  correctly at every size — which is the discriminator that identifies the cause.
+
+Cause: `sizeThatFits` reports `lines × lineBox`; when `lineBox < naturalLineHeight` SwiftUI
+feeds that shorter height back as the line-breaking proposal, so only
+`floor(reported / natural)` lines fit and the remainder is ellipsed. The measured *height* is
+correct — the headline is 82.33 ≈ 2 × 41.04 — while the *line breaking* is wrong. Both
+design reviews measured heights and passed the model; neither rendered wrapped text, which is
+how it survived two review rounds.
+
+**Owner: the orchestrator.** It cannot be fixed inside a feature worktree — the change to
+`LineBoxRenderer` is non-additive and `Typography.swift` is shared by all three features.
+
+Sequence: merge Onboarding, Log and Trend first, then fix `LineBoxRenderer` on `main`, then
+re-verify all three screens with **wrapped, multi-line text rendered**, not only measured.
+This must land before the theming pass signs anything off.
