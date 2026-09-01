@@ -172,7 +172,7 @@ extension EnvironmentValues {
 ///
 /// Every tappable thing uses it: both primary buttons, the outlined button, the
 /// stepper's `−` and `+`, both tab items, the three period segments, the Today
-/// stat cell, both sheet buttons, "Maybe later", "Allow", and the Edit header's
+/// stat cell, both sheet buttons, "Allow", and the Edit header's
 /// Cancel and Delete. It renders the label exactly as `.plain` does and adds
 /// nothing but the scale.
 nonisolated struct PressableButtonStyle: ButtonStyle {

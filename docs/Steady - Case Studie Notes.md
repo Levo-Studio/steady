@@ -198,3 +198,26 @@ of the strip holds a value the centre is already showing.
 The rule that resolves it is worth stating plainly, because it generalises: **the clamp
 belongs to the value, not to the drawing.** A ruler does not stop being a ruler past the last
 reading you are allowed to select. It simply stops moving.
+
+### What App Review taught us about pre-permission screens
+
+The health-access screen was rejected under guideline 5.1.1(iv), and the rejection was
+right. Two things were wrong with it. The primary button read "Allow in Apple Health",
+which advocates for one answer before the system has asked the question, and underneath it
+sat "Maybe later", which let the user leave the screen without the request ever appearing.
+Both are versions of the same mistake: the app was standing between the user and their own
+decision, once by nudging it and once by deferring it.
+
+The fix removes the second action entirely and renames the first to "Continue". The screen
+still explains what will be asked for and why — that part was never the problem, and the
+card with its two illustrative toggles stays — but it now has exactly one exit, and that
+exit is the system sheet. The pre-prompt is allowed to be an explanation. It is not allowed
+to be a vote.
+
+Removing "Maybe later" exposed a second, quieter bug. The old flow leaned on the access-off
+banner as the way back in after a decline, and that banner's "Allow" simply called
+`requestAuthorization` again. HealthKit presents its sheet once per app and never again, so
+after a real denial that button did nothing at all — it looked like a route back and was a
+dead end. It now falls through: it asks again, which is still correct while the request is
+undetermined, and if access is still off once the request has resolved it opens Settings,
+which is the only place the decision can actually be changed.

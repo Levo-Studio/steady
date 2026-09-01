@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-/// "Apple Health access is off" with an "Allow" that re-presents the system
-/// authorisation sheet.
+/// "Apple Health access is off" with an "Allow" that asks Apple Health again,
+/// and falls through to Settings once the system sheet is spent.
 ///
 /// It sits between the stats grid and the tab bar and changes nothing else about
 /// the screen — the Trend screen keeps working, it simply has nothing to show.
@@ -40,7 +40,7 @@ struct AccessOffBanner: View {
             }
             .buttonStyle(.pressable)
             .accessibilityLabel("Allow")
-            .accessibilityHint("Asks Apple Health for access again")
+            .accessibilityHint("Asks Apple Health for access again, or opens Settings")
         }
         .padding(.horizontal, Metrics.accessBannerPadding)
         .frame(minHeight: Metrics.accessBannerHeight)

@@ -395,10 +395,13 @@ Padding `80 / 24 / 40`. Mark + wordmark, no Levo Studio line.
   - Each row ends in an on-state toggle: `51 × 31` pill in `ac`, white knob `27` inset `2`,
     right-aligned. These are **illustrative** — they show what the system sheet will ask
     for. They are not controls and must not be tappable.
-- `Spacer` — primary button, `ink` fill: **"Allow in Apple Health"**, which presents the
-  real `HKHealthStore` authorisation sheet.
-- `margin-top: 24` — centred 13 pt `mut`: **"Maybe later"**, which proceeds without
-  authorisation and lands on the "Access off" state.
+- `Spacer` — primary button, `ink` fill: **"Continue"**, which presents the real
+  `HKHealthStore` authorisation sheet. Onboarding completes once the sheet is answered,
+  granted or not; a decline lands on the "Access off" state.
+- There is **no** second, dismissive action on this screen. App Review guideline 5.1.1(iv)
+  requires that a custom message shown before a permission request always proceeds to the
+  request, and that the button not urge a particular answer — so no "Maybe later", and no
+  "Allow" in the label.
 
 ### 7.3 Trend — empty start
 
@@ -600,8 +603,8 @@ overshoot at most. A control that visibly wobbles twice is a toy, and this app i
 
 Anything tappable scales to `0.96` on touch-down with `press`, and back to `1.0` on release.
 That means: both primary buttons, the outlined button, the stepper's `−` and `+`, both tab
-items, the three period segments, the Today stat cell, both sheet buttons, "Maybe later", and
-"Allow" on the access banner. The scale is small on purpose — at `0.96` you feel it more than
+items, the three period segments, the Today stat cell, both sheet buttons, and "Allow" on
+the access banner. The scale is small on purpose — at `0.96` you feel it more than
 you see it, which is the point.
 
 Press feedback is **not** cancelled by Reduce Motion. A scale of 4% is not vestibular motion,
@@ -704,8 +707,7 @@ Your weight lives in Apple Health. We never see it — not us, not even Apple.
 Your data is yours.
 Read weight / Stays on your phone
 Write weight / To save what you log
-Allow in Apple Health
-Maybe later
+Continue
 
 Your line starts after the first weigh-in. Give it a week and it will mean
 something.

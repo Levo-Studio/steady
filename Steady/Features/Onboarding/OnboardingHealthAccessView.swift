@@ -9,10 +9,10 @@ import SwiftUI
 
 /// The second and last onboarding step: the one box to tick.
 ///
-/// Both paths off this screen finish onboarding. "Allow in Apple Health"
-/// presents the real system sheet first; "Maybe later" does not, and the user
-/// lands on the access-off state, which is where access can still be granted.
-/// Onboarding is never shown again either way.
+/// The screen has one way out: "Continue" presents the real system sheet and
+/// onboarding finishes once it is answered, granted or not. A denial lands on
+/// the access-off state, which is where access can still be granted later.
+/// Onboarding is never shown again.
 struct OnboardingHealthAccessView: View {
 
     let onComplete: () -> Void
@@ -45,54 +45,12 @@ struct OnboardingHealthAccessView: View {
 
                 Spacer()
 
-                PrimaryButton("Allow in Apple Health", fill: .ink, action: requestAccess)
+                PrimaryButton("Continue", fill: .ink, action: requestAccess)
                     .disabled(isRequesting)
-
-                maybeLater
             }
             .multilineTextAlignment(.leading)
         }
     }
-
-    /// 13 pt `mut`, centred, `24` under the button.
-    ///
-    /// The label is small by design, so the hit area is grown to the 44 pt
-    /// minimum with vertical padding and the extra bottom half is then taken
-    /// back out of the layout: the text keeps its `24` gap above and its `40`
-    /// from the foot of the screen, while the target extends into the padding
-    /// below it where there is nothing else to hit.
-    ///
-    /// Both gaps are made of padding alone, so they stay exact as the label's
-    /// box grows with Dynamic Type: `24 − hitAreaPadding` above the button's
-    /// own `hitAreaPadding` is `24` at every size, and the negative bottom
-    /// padding always cancels exactly one `hitAreaPadding`.
-    private var maybeLater: some View {
-        Button {
-            onComplete()
-        } label: {
-            Text("Maybe later")
-                .steadyTextStyle(.maybeLater)
-                .foregroundStyle(Palette.mut)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Self.hitAreaPadding)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.pressable)
-        .disabled(isRequesting)
-        .accessibilityLabel("Maybe later")
-        .accessibilityHint("Finishes setup without Apple Health access")
-        .padding(.top, Metrics.space4 - Self.hitAreaPadding)
-        .padding(.bottom, -Self.hitAreaPadding)
-    }
-
-    /// The minimum touch target, STEADY.md §11.
-    private static let minimumTarget: CGFloat = 44
-
-    /// Half the difference between the label's line box and that minimum. The
-    /// style is `13 / 1`, so the box *is* `13` pt and the padded button is
-    /// exactly `44`.
-    private static let hitAreaPadding =
-        (minimumTarget - SteadyTextStyle.maybeLater.size) / 2
 
     private func requestAccess() {
         guard !isRequesting else { return }

@@ -18,8 +18,9 @@ import SwiftUI
 /// not one of them, so there is nothing here for Reduce Motion to strip.
 struct OnboardingFlowView: View {
 
-    /// Called when onboarding is finished, by either path. "Maybe later" also
-    /// completes it — the user simply lands on the access-off state.
+    /// Called when onboarding is finished — that is, once the health request
+    /// has been answered. A decline completes it too: the user simply lands on
+    /// the access-off state.
     let onComplete: () -> Void
 
     @State private var step: Step = .welcome

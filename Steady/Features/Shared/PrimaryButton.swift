@@ -94,7 +94,7 @@ extension PrimaryButton where Label == Text {
 
 #Preview("Dark") {
     VStack(spacing: Metrics.space3) {
-        PrimaryButton("Allow in Apple Health", fill: .ink) {}
+        PrimaryButton("Continue", fill: .ink) {}
         PrimaryButton("Update", fill: .accent) {}
         PrimaryButton("Edit today’s weight", fill: .outline) {}
     }

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct TrendView: View {
 
@@ -135,8 +136,18 @@ struct TrendView: View {
         router.routeToEditToday()
     }
 
+    /// Apple Health presents its authorisation sheet once and never again, so
+    /// re-asking is only useful while the request is still undetermined. If
+    /// access is still off once the request has resolved, the sheet is not
+    /// coming back and the only place left to change the decision is Settings.
     private func requestAccess() {
-        Task { await store.requestAuthorization() }
+        Task {
+            await store.requestAuthorization()
+            guard store.accessState == .off,
+                  let settings = URL(string: UIApplication.openSettingsURLString)
+            else { return }
+            await UIApplication.shared.open(settings)
+        }
     }
 }
 

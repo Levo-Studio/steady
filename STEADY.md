@@ -296,8 +296,10 @@ is a state of one of those, or a one-time flow.
 
 **Onboarding shows once, ever.** A single `UserDefaults` boolean — the only thing the app
 persists outside HealthKit. It is never re-shown, and there is no way to trigger it again
-from inside the app. If the user taps "Maybe later", onboarding is still complete; they land
-on the access-off state and can grant access from there.
+from inside the app. The health-access screen has one action, "Continue", which always
+presents the system sheet — guideline 5.1.1(iv) forbids a pre-prompt that can be dismissed
+or that pushes an answer. If the request is declined, onboarding is still complete; the user
+lands on the access-off state and can grant access from Settings via the banner there.
 
 **There is no settings screen.** Not hidden, not behind a long-press. Units, theme, and
 target are all decisions the app makes or the system makes.
